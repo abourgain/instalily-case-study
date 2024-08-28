@@ -34,6 +34,7 @@ jobs:
 
       - name: Run backend linting
         run: |
+          eval "$(conda shell.bash hook)"
           conda activate instalily_env
           make pylint
 
