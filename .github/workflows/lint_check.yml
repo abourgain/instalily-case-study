@@ -1,0 +1,42 @@
+name: Lint Check
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Miniconda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          python-version: "3.11"
+          auto-update-conda: true
+          environment-file: backend/environment.yml # Update this path to your actual environment.yml location
+          activate-environment: instalily_env
+
+      - name: Verify Conda environment
+        run: conda info --envs
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20" # Use the Node.js version compatible with your React app
+
+      - name: Install frontend dependencies
+        run: cd ./frontend && npm install
+
+      - name: Run backend linting
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate instalily_env
+          make pylint
+
+      - name: Run frontend linting
+        run: make eslint
