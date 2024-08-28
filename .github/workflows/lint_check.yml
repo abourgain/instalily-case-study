@@ -32,10 +32,5 @@ jobs:
       - name: Install frontend dependencies
         run: cd ./frontend && npm install
 
-      - name: Run backend linting
-        run: |
-          conda activate instalily_env
-          make lint
-
-      - name: Run frontend linting
-        run: make eslint
+      - name: Run linting
+        run: make lint
