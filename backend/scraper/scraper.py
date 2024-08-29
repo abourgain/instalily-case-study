@@ -235,7 +235,10 @@ class ModelsScraper(BaseScraper):
             if save_local:
                 # Save the scraped data to a JSON file
                 category = base_url.split("/")[-1].split("-")[0]
-                with open(f"./backend/scraper/data/{category}_models.json", "w", encoding="utf-8") as f:
+                file_path = f"./backend/scraper/data/{category}_models.json"
+                if self.verbose:
+                    logging.info("Saving scraped data to JSON file %s...", file_path)
+                with open(file_path, "w", encoding="utf-8") as f:
                     json.dump(all_models, f, indent=2)
 
             return all_models
@@ -270,10 +273,13 @@ class ModelsScraper(BaseScraper):
 
             models_data[category] = all_models
 
-            if save_local:
-                # Save the scraped data to a JSON file
-                with open("./backend/scraper/data/models.json", "w", encoding="utf-8") as f:
-                    json.dump(models_data, f, indent=2)
+        if save_local:
+            file_path = "./backend/scraper/data/models.json"
+            if self.verbose:
+                logging.info("Saving scraped data to JSON file %s...", file_path)
+            # Save the scraped data to a JSON file
+            with open(file_path, "w", encoding="utf-8") as f:
+                json.dump(models_data, f, indent=2)
 
 
 def main():
