@@ -38,13 +38,17 @@ class BaseScraper:
         headful: bool = False,
         verbose: bool = False,
         driver_type: str = "undetected",
+        use_proxy: bool = True,
     ):
         self.headless = not headful
         self.verbose = verbose
         self.driver_type = driver_type
+        self.use_proxy = use_proxy
+
         self.browser_headers = self._load_browser_headers()
         self.user_agents = self._load_user_agents()
-        self._get_good_proxies()
+        if self.use_proxy:
+            self._get_good_proxies()
         self.driver = None
 
     @staticmethod
@@ -113,12 +117,13 @@ class BaseScraper:
         browser_type = "Chrome" if self.driver_type == "undetected" else self.driver_type.capitalize()
         header = self._get_random_header(browser_type)
 
-        # Reload the proxies if the time is more than 10 minutes
-        if time.time() - self.proxies_time > 600:
-            self._get_good_proxies()
+        if self.use_proxy:
+            # Reload the proxies if the time is more than 10 minutes
+            if time.time() - self.proxies_time > 600:
+                self._get_good_proxies()
 
-        proxy_url = random.choice(list(self.good_proxies))
-        proxy = proxy_url.replace("http://", "")
+            proxy_url = random.choice(list(self.good_proxies))
+            proxy = proxy_url.replace("http://", "")
 
         if self.driver_type == "Firefox":
             options = webdriver.FirefoxOptions()
@@ -129,7 +134,8 @@ class BaseScraper:
                 profile.set_preference("general.useragent.override", header["User-Agent"])
                 profile.set_preference(f"{key}", value)
             options.profile = profile
-            options.add_argument(f"--proxy-server={proxy}")
+            if self.use_proxy:
+                options.add_argument(f"--proxy-server={proxy}")
             return webdriver.Firefox(options=options)
 
         if self.driver_type == "Chrome":
@@ -138,7 +144,8 @@ class BaseScraper:
                 options.add_argument("--headless")
             for key, value in header.items():
                 options.add_argument(f"{key}={value}")
-            options.add_argument(f"--proxy-server={proxy}")
+            if self.use_proxy:
+                options.add_argument(f"--proxy-server={proxy}")
             return webdriver.Chrome(options=options)
 
         if self.driver_type == "undetected":
@@ -147,7 +154,8 @@ class BaseScraper:
                 options.add_argument("--headless=True")
             for key, value in header.items():
                 options.add_argument(f"{key}={value}")
-            options.add_argument(f"--proxy-server={proxy}")
+            if self.use_proxy:
+                options.add_argument(f"--proxy-server={proxy}")
             return uc.Chrome(options=options)
 
         raise ValueError("Invalid driver type")
@@ -293,9 +301,10 @@ def main():
         default="undetected",
         help="Type of driver to use (undetected, Firefox, Chrome).",
     )
+    parser.add_argument("--no-proxy", action="store_false", help="Don't use a proxy.")
     args = parser.parse_args()
 
-    scraper = ModelsScraper(headful=args.headful, verbose=args.verbose, driver_type=args.driver)
+    scraper = ModelsScraper(headful=args.headful, verbose=args.verbose, driver_type=args.driver, use_proxy=args.no_proxy)
     scraper.scrape_models()
 
 
