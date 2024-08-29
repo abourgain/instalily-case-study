@@ -8,3 +8,10 @@ dependencies:
       - black
       - pylint
       - python_dotenv
+      - selenium
+      - requests
+      - pandas
+      - undetected-chromedriver
+      - pyyaml
+      - lxml
+      - tqdm
