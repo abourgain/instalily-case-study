@@ -620,14 +620,21 @@ class ModelsDetailsScraper(BaseScraper):
             "common_symptoms": self._get_common_symptoms(),
         }
 
-    def _load_models(self, collection: str = None):
+    def _load_models(
+        self,
+        collection: str = None,
+    ):
         file_path = f"./backend/scraper/data/models.{collection}.json" if collection else "./backend/scraper/data/models.json"
         # Load models from the database
         with open(file_path, encoding="utf-8") as f:
             models = json.load(f)
         return models
 
-    def _save_model_details(self, model_details: dict, collection: str = None):
+    def _save_model_details(
+        self,
+        model_details: dict,
+        collection: str = None,
+    ):
         file_path = f"./backend/scraper/data/models.{collection}/{model_details['model_num']}.json" if collection else f"./backend/scraper/data/models/{model_details['model_num']}.json"
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(model_details, f, indent=4)
@@ -635,7 +642,7 @@ class ModelsDetailsScraper(BaseScraper):
     def scrape_all_models_details(
         self,
         save_local: bool = True,
-        collection: str = False,
+        collection: str = None,
     ):
         """Scrape all model details."""
         save_parts_path = f"./backend/scraper/data/parts.{collection}.csv" if collection else "./backend/scraper/data/parts.csv"
