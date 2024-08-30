@@ -445,6 +445,13 @@ class ModelsDetailsScraper(BaseScraper):
                 # Locate all video elements on the current page
                 video_elements = self.driver.find_elements(By.CLASS_NAME, 'yt-video')
 
+                if not video_elements:
+                    total_extracted = n_elements_page + (page_num - 2) * videos_per_page
+                    assert total_extracted == len(video_details), f"Expected {total_extracted} videos, but extracted {len(video_details)}"
+                    break
+
+                n_elements_page = len(video_elements)
+
                 for video_element in video_elements:
                     # Extract YouTube video link
                     yt_video_id = video_element.get_attribute('data-yt-init')
@@ -481,13 +488,6 @@ class ModelsDetailsScraper(BaseScraper):
 
                     # Store the details for the video
                     video_details.append({'youtube_link': youtube_link, 'video_title': video_title, 'parts': parts})
-
-                    # Stop if the required number of videos have been extracted
-                    if len(video_details) >= total_videos:
-                        break
-
-            # Verify that the number of extracted videos matches the total number of videos
-            assert len(video_details) == total_videos, f"Expected {total_videos} videos, but extracted {len(video_details)}."
 
             # Return on the model page
             self.driver.get(url)
