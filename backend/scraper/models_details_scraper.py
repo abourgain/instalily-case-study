@@ -18,17 +18,6 @@ from backend.scraper.config import logging, get_args
 class ModelsDetailsScraper(BaseScraper):
     """Class to scrape detailed model information on the PartSelect website."""
 
-    def __init__(
-        self,
-        headful: bool = False,
-        verbose: bool = False,
-        driver_type: str = "Chrome",
-        use_proxy: bool = True,
-        url: str = None,
-    ):
-        super().__init__(headful, verbose, driver_type, use_proxy)
-        self.url = url
-
     def _section_exists(self, section_name):
         """
         Verifies if a section exists by checking the navigation summary.
@@ -644,13 +633,11 @@ def main():
     """Run the scraper."""
     args = get_args()
 
-    url = "https://www.partselect.com/Models/004621710A/"  # Replace with the actual URL
     scraper = ModelsDetailsScraper(
         headful=args.headful,
         verbose=args.verbose,
         driver_type=args.driver,
         use_proxy=args.no_proxy,
-        url=url,
     )
     scraper.scrape_all_models_details(test=args.test)
 
