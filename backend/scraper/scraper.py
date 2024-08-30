@@ -7,7 +7,6 @@ from io import StringIO
 import json
 import time
 import random
-import logging
 
 import pandas as pd
 import requests
@@ -19,6 +18,8 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 import undetected_chromedriver as uc
 
+from backend.scraper.config import logging
+
 
 # Constants
 HEADERS_FILE = "./backend/scraper/headers.yml"
@@ -26,8 +27,6 @@ USER_AGENTS_FILE = "./backend/scraper/user_agents.yml"
 BASE_URL = "https://www.partselect.com/"
 FREE_PROXY_URL = "https://free-proxy-list.net"
 CATEGORIES = ["Dishwasher", "Refrigerator"]
-
-logging.basicConfig(level=logging.INFO)
 
 
 class BaseScraper:
@@ -106,7 +105,7 @@ class BaseScraper:
 
     def _get_random_wait_time(self):
         """Get a random wait time between 0.01 and 1 second."""
-        return random.uniform(0.001, 0.1) if self.headless else 0.5
+        return random.uniform(0.001, 0.01) if self.headless else 0.5
 
     def _setup_driver(self):
         """Set up the browser driver."""
