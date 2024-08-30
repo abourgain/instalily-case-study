@@ -124,40 +124,43 @@ class BaseScraper:
             proxy_url = random.choice(list(self.good_proxies))
             proxy = proxy_url.replace("http://", "")
 
-        if self.driver_type == "Firefox":
-            options = webdriver.FirefoxOptions()
-            if self.headless:
-                options.add_argument("--headless")
-            profile = webdriver.FirefoxProfile()
-            for key, value in header.items():
-                profile.set_preference("general.useragent.override", header["User-Agent"])
-                profile.set_preference(f"{key}", value)
-            options.profile = profile
-            if self.use_proxy:
-                options.add_argument(f"--proxy-server={proxy}")
-            return webdriver.Firefox(options=options)
+        options = None
+        match self.driver_type:
+            case "Firefox":
+                options = webdriver.FirefoxOptions()
+                if self.headless:
+                    options.add_argument("--headless")
+                profile = webdriver.FirefoxProfile()
+                for key, value in header.items():
+                    profile.set_preference("general.useragent.override", header["User-Agent"])
+                    profile.set_preference(f"{key}", value)
+                options.profile = profile
+                if self.use_proxy:
+                    options.add_argument(f"--proxy-server={proxy}")
+                return webdriver.Firefox(options=options)
 
-        if self.driver_type == "Chrome":
-            options = webdriver.ChromeOptions()
-            if self.headless:
-                options.add_argument("--headless")
-            for key, value in header.items():
-                options.add_argument(f"{key}={value}")
-            if self.use_proxy:
-                options.add_argument(f"--proxy-server={proxy}")
-            return webdriver.Chrome(options=options)
+            case "Chrome":
+                options = webdriver.ChromeOptions()
+                if self.headless:
+                    options.add_argument("--headless")
+                for key, value in header.items():
+                    options.add_argument(f"{key}={value}")
+                if self.use_proxy:
+                    options.add_argument(f"--proxy-server={proxy}")
+                return webdriver.Chrome(options=options)
 
-        if self.driver_type == "undetected":
-            options = uc.ChromeOptions()
-            if self.headless:
-                options.add_argument("--headless=True")
-            for key, value in header.items():
-                options.add_argument(f"{key}={value}")
-            if self.use_proxy:
-                options.add_argument(f"--proxy-server={proxy}")
-            return uc.Chrome(options=options)
+            case "undetected":
+                options = uc.ChromeOptions()
+                if self.headless:
+                    options.add_argument("--headless=True")
+                for key, value in header.items():
+                    options.add_argument(f"{key}={value}")
+                if self.use_proxy:
+                    options.add_argument(f"--proxy-server={proxy}")
+                return uc.Chrome(options=options)
 
-        raise ValueError("Invalid driver type")
+            case _:
+                raise ValueError("Invalid driver type")
 
     def __del__(self):
         """Clean up the driver when the scraper is deleted."""
