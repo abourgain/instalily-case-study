@@ -639,8 +639,6 @@ class ModelsDetailsScraper(BaseScraper):
                 if save_local:
                     self._save_model_details(model_details)
 
-            break  # Remove this line to scrape all categories
-
 
 def main():
     """Run the scraper."""
