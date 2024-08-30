@@ -1,6 +1,5 @@
 """Scraper to extract detailed model information from the PartSelect website."""
 
-import argparse
 import json
 import time
 
@@ -13,7 +12,7 @@ from selenium.common.exceptions import TimeoutException
 
 
 from backend.scraper.scraper import BaseScraper
-from backend.scraper.config import logging
+from backend.scraper.config import logging, get_args
 
 
 class ModelsDetailsScraper(BaseScraper):
@@ -645,18 +644,7 @@ class ModelsDetailsScraper(BaseScraper):
 
 def main():
     """Run the scraper."""
-    parser = argparse.ArgumentParser(description="Scrape ...")
-    parser.add_argument("--headful", action="store_true", help="Run browser in headful mode.")
-    parser.add_argument("--verbose", action="store_true", help="Print verbose output.")
-    parser.add_argument(
-        "--driver",
-        type=str,
-        default="undetected",
-        help="Type of driver to use (undetected, Firefox, Chrome).",
-    )
-    parser.add_argument("--no-proxy", action="store_false", help="Don't use a proxy.")
-    parser.add_argument("--test", action="store_true", help="Run in test mode.")
-    args = parser.parse_args()
+    args = get_args()
 
     url = "https://www.partselect.com/Models/004621710A/"  # Replace with the actual URL
     scraper = ModelsDetailsScraper(
