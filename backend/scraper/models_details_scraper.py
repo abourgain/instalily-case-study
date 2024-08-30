@@ -462,8 +462,12 @@ class ModelsDetailsScraper(BaseScraper):
                         part_link = part_element.find_element(By.TAG_NAME, 'a').get_attribute('href').split('?')[0]
                         self.part_links.add(part_link)
                         part_id = part_link.split('/')[-1].split('.')[0]
-                        part_price = part_element.find_element(By.CLASS_NAME, 'mega-m__part__price').text.strip()
-                        part_status = part_element.find_element(By.CLASS_NAME, 'js-tooltip').text.strip()
+                        try:
+                            part_price = part_element.find_element(By.CLASS_NAME, 'mega-m__part__price').text.strip()
+                            part_status = part_element.find_element(By.CLASS_NAME, 'js-tooltip').text.strip()
+                        except selenium.common.exceptions.NoSuchElementException:
+                            part_price = "No longer available"
+                            part_status = "No longer available"
 
                         parts.append(
                             {
