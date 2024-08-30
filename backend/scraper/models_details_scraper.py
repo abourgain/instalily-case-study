@@ -1,7 +1,9 @@
 """Scraper to extract detailed model information from the PartSelect website."""
 
 import json
+import os
 import time
+import csv
 
 from tqdm import tqdm
 import selenium
@@ -17,6 +19,16 @@ from backend.scraper.config import logging, get_args
 
 class ModelsDetailsScraper(BaseScraper):
     """Class to scrape detailed model information on the PartSelect website."""
+
+    def __init__(
+        self,
+        headful: bool = False,
+        verbose: bool = False,
+        driver_type: str = "undetected",
+        use_proxy: bool = True,
+    ):
+        super().__init__(headful, verbose, driver_type, use_proxy)
+        self.part_links = set()
 
     def _section_exists(self, section_name):
         """
@@ -143,8 +155,9 @@ class ModelsDetailsScraper(BaseScraper):
                 for part_element in part_elements:
                     try:
                         part_name = part_element.find_element(By.CLASS_NAME, 'mega-m__part__name').text.strip()
-                        part_link = part_element.find_element(By.TAG_NAME, 'a').get_attribute('href')
-                        part_id = part_link.split('/')[-1].split('-')[0]
+                        part_link = part_element.find_element(By.TAG_NAME, 'a').get_attribute('href').split('?')[0]
+                        self.part_links.add(part_link)
+                        part_id = part_link.split('/')[-1].split('.')[0]
                         try:
                             part_price = part_element.find_element(By.CLASS_NAME, 'mega-m__part__price').text.strip()
                             part_status = part_element.find_element(By.CLASS_NAME, 'js-tooltip').text.strip()
@@ -207,8 +220,9 @@ class ModelsDetailsScraper(BaseScraper):
                     related_parts_elements = question_element.find_elements(By.CLASS_NAME, 'qna__question__related')
                     for part_element in related_parts_elements:
                         part_name = part_element.find_element(By.CLASS_NAME, 'bold').text.strip()
-                        part_link = part_element.find_element(By.TAG_NAME, 'a').get_attribute('href')
-                        part_id = part_link.split('/')[-1].split('-')[0]
+                        part_link = part_element.find_element(By.TAG_NAME, 'a').get_attribute('href').split('?')[0]
+                        self.part_links.add(part_link)
+                        part_id = part_link.split('/')[-1].split('.')[0]
                         part_price = part_element.find_element(By.CLASS_NAME, 'price').text.strip()
                         part_status = part_element.find_element(By.CLASS_NAME, 'js-tooltip').text.strip()
                         related_parts.append(
@@ -292,8 +306,9 @@ class ModelsDetailsScraper(BaseScraper):
     def _extract_part_details_type1(self, part_element):
         """Extracts part details for Type 1 (Detailed symptom page)."""
         part_name = part_element.find_element(By.CLASS_NAME, 'header').find_element(By.TAG_NAME, 'a').text.strip()
-        part_link = part_element.find_element(By.CLASS_NAME, 'header').find_element(By.TAG_NAME, 'a').get_attribute('href')
-        part_id = part_link.split('/')[-1].split('-')[0]
+        part_link = part_element.find_element(By.CLASS_NAME, 'header').find_element(By.TAG_NAME, 'a').get_attribute('href').split('?')[0]
+        self.part_links.add(part_link)
+        part_id = part_link.split('/')[-1].split('.')[0]
         fix_percent = part_element.find_element(By.CLASS_NAME, 'symptoms__percent').text.strip()
         try:
             part_price = part_element.find_element(By.CLASS_NAME, 'price').text.strip()
@@ -323,8 +338,9 @@ class ModelsDetailsScraper(BaseScraper):
             self.driver.execute_script("arguments[0].classList.remove('d-none');", part_element)
 
         part_name = part_element.find_element(By.CLASS_NAME, 'bold').text.strip()
-        part_link = part_element.find_element(By.TAG_NAME, 'a').get_attribute('href')
-        part_id = part_link.split('/')[-1].split('-')[0]
+        part_link = part_element.find_element(By.TAG_NAME, 'a').get_attribute('href').split('?')[0]
+        self.part_links.add(part_link)
+        part_id = part_link.split('/')[-1].split('.')[0]
         fix_percent = part_element.find_element(By.CLASS_NAME, 'symptoms__percent').text.strip()
         try:
             part_price = part_element.find_element(By.CLASS_NAME, 'mega-m__part__price').text.strip()
@@ -443,8 +459,9 @@ class ModelsDetailsScraper(BaseScraper):
 
                     for part_element in part_elements:
                         part_name = part_element.find_element(By.CLASS_NAME, 'mega-m__part__name').text.strip()
-                        part_link = part_element.find_element(By.TAG_NAME, 'a').get_attribute('href')
-                        part_id = part_link.split('/')[-1].split('-')[0]
+                        part_link = part_element.find_element(By.TAG_NAME, 'a').get_attribute('href').split('?')[0]
+                        self.part_links.add(part_link)
+                        part_id = part_link.split('/')[-1].split('.')[0]
                         part_price = part_element.find_element(By.CLASS_NAME, 'mega-m__part__price').text.strip()
                         part_status = part_element.find_element(By.CLASS_NAME, 'js-tooltip').text.strip()
 
@@ -528,8 +545,9 @@ class ModelsDetailsScraper(BaseScraper):
                     parts_elements = instruction_element.find_elements(By.CLASS_NAME, 'repair-story__parts a')
                     for part_element in parts_elements:
                         part_name = part_element.find_element(By.TAG_NAME, 'span').text.strip()
-                        part_link = part_element.get_attribute('href')
-                        part_id = part_link.split('/')[-1].split('-')[0]
+                        part_link = part_element.get_attribute('href').split('?')[0]
+                        self.part_links.add(part_link)
+                        part_id = part_link.split('/')[-1].split('.')[0]
 
                         parts.append(
                             {
@@ -613,8 +631,16 @@ class ModelsDetailsScraper(BaseScraper):
         self,
         save_local: bool = True,
         test: bool = False,
+        save_parts_path: str = "./backend/scraper/data/parts.csv",
     ):
         """Scrape all model details."""
+        if save_parts_path and test:
+            save_parts_path = save_parts_path.replace(".csv", ".test.csv")
+        if save_parts_path and not os.path.exists(save_parts_path):
+            with open(save_parts_path, "w", newline='', encoding="utf-8") as f:
+                csv_writer = csv.writer(f)
+                csv_writer.writerow(["part_link"])
+
         models = self._load_models(test)
 
         for category, model_list in models.items():
@@ -627,6 +653,13 @@ class ModelsDetailsScraper(BaseScraper):
                 # Save model details to the database
                 if save_local:
                     self._save_model_details(model_details)
+
+                if self.part_links and save_parts_path:
+                    with open(save_parts_path, "a", newline='', encoding="utf-8") as f:
+                        csv_writer = csv.writer(f)
+                        for part_link in self.part_links:
+                            csv_writer.writerow([part_link])
+                    self.part_links.clear()
 
 
 def main():
