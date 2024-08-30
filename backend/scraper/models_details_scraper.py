@@ -46,7 +46,7 @@ class ModelsDetailsScraper(BaseScraper):
                 return True
             return False
 
-        except Exception as e:
+        except (selenium.common.exceptions.NoSuchElementException, TimeoutException) as e:
             print(f"Error checking section '{section_name}': {e}")
             return False
 
@@ -174,7 +174,7 @@ class ModelsDetailsScraper(BaseScraper):
                                 'status': part_status,
                             }
                         )
-                    except Exception as e:
+                    except (selenium.common.exceptions.NoSuchElementException, TimeoutException) as e:
                         print(f"Error extracting part details: {e}")
 
                 # Break the loop if all parts are collected
@@ -190,7 +190,7 @@ class ModelsDetailsScraper(BaseScraper):
 
             return part_details
 
-        except Exception as e:
+        except (selenium.common.exceptions.NoSuchElementException, TimeoutException) as e:
             print(f"Error extracting part details: {e}")
             return []
 
@@ -257,7 +257,7 @@ class ModelsDetailsScraper(BaseScraper):
 
             return extracted_qnas
 
-        except Exception as e:
+        except (selenium.common.exceptions.NoSuchElementException, TimeoutException) as e:
             print(f"Error extracting Q&A details: {e}")
             return []
 
@@ -298,114 +298,118 @@ class ModelsDetailsScraper(BaseScraper):
             assert len(symptoms_details) == total_symptoms, f"Expected {total_symptoms} symptoms, but extracted {len(symptoms_details)}."
             return symptoms_details
 
-        except Exception as e:
+        except (selenium.common.exceptions.NoSuchElementException, TimeoutException) as e:
             print(f"Error extracting symptom details: {e}")
             return symptoms_details
+
+    def _extract_part_details_type1(self, part_element):
+        """Extracts part details for Type 1 (Detailed symptom page)."""
+        part_name = part_element.find_element(By.CLASS_NAME, 'header').find_element(By.TAG_NAME, 'a').text.strip()
+        part_link = part_element.find_element(By.CLASS_NAME, 'header').find_element(By.TAG_NAME, 'a').get_attribute('href')
+        part_id = part_link.split('/')[-1].split('-')[0]
+        fix_percent = part_element.find_element(By.CLASS_NAME, 'symptoms__percent').text.strip()
+        try:
+            part_price = part_element.find_element(By.CLASS_NAME, 'price').text.strip()
+            part_status = part_element.find_element(By.CLASS_NAME, 'js-partAvailability').text.strip()
+        except selenium.common.exceptions.NoSuchElementException:
+            part_price = "No longer available"
+            part_status = "No longer available"
+
+        part_details = {
+            'name': part_name,
+            'id': part_id,
+            'link': part_link,
+            'price': part_price,
+            'fix_percent': fix_percent,
+            'status': part_status,
+        }
+
+        customer_stories = self._extract_customer_stories(part_element)
+        if customer_stories:
+            part_details['customer_stories'] = customer_stories
+
+        return part_details
+
+    def _extract_part_details_type2(self, part_element):
+        """Extracts part details for Type 2 (Simple symptom page)."""
+        if 'd-none' in part_element.get_attribute('class'):
+            self.driver.execute_script("arguments[0].classList.remove('d-none');", part_element)
+
+        part_name = part_element.find_element(By.CLASS_NAME, 'bold').text.strip()
+        part_link = part_element.find_element(By.TAG_NAME, 'a').get_attribute('href')
+        part_id = part_link.split('/')[-1].split('-')[0]
+        fix_percent = part_element.find_element(By.CLASS_NAME, 'symptoms__percent').text.strip()
+        try:
+            part_price = part_element.find_element(By.CLASS_NAME, 'mega-m__part__price').text.strip()
+            part_status = part_element.find_element(By.CLASS_NAME, 'js-tooltip').text.strip()
+        except selenium.common.exceptions.NoSuchElementException:
+            part_price = "No longer available"
+            part_status = "No longer available"
+
+        return {
+            'name': part_name,
+            'id': part_id,
+            'link': part_link,
+            'price': part_price,
+            'fix_percent': fix_percent,
+            'status': part_status,
+        }
+
+    def _extract_customer_stories(self, part_element):
+        """Extracts customer stories if available."""
+        customer_stories = []
+        story_elements = part_element.find_elements(By.CLASS_NAME, 'repair-story')
+        for story_element in story_elements:
+            story_title = story_element.find_element(By.CLASS_NAME, 'repair-story__title').text.strip()
+            story_content = story_element.find_element(By.CLASS_NAME, 'repair-story__instruction__content').text.strip()
+            difficulty, repair_time, tools = self._extract_story_details(story_element)
+
+            customer_stories.append({'title': story_title, 'content': story_content, 'difficulty': difficulty, 'repair_time': repair_time, 'tools': tools})
+        return customer_stories
+
+    def _extract_story_details(self, story_element):
+        """Extracts additional details like difficulty, repair time, and tools from a customer story."""
+        difficulty = ""
+        repair_time = ""
+        tools = ""
+
+        details_list = story_element.find_elements(By.CSS_SELECTOR, '.repair-story__details li')
+        for detail_item in details_list:
+            detail_text = detail_item.text.strip()
+            if "Difficulty Level:" in detail_text:
+                difficulty = detail_text.split("Difficulty Level:")[1].strip()
+            elif "Total Repair Time:" in detail_text:
+                repair_time = detail_text.split("Total Repair Time:")[1].strip()
+            elif "Tools:" in detail_text:
+                tools = detail_text.split("Tools:")[1].strip()
+
+        return difficulty, repair_time, tools
 
     def _extract_symptom_details(self, symptom_name):
         """Extracts the details of a specific symptom from its page."""
         parts_details = []
 
         try:
-            # Locate all part elements associated with the symptom
             part_elements = self.driver.find_elements(By.CLASS_NAME, 'symptoms')
 
             for part_element in part_elements:
-                # Check for the type of symptom page by detecting key elements
                 if part_element.find_elements(By.CLASS_NAME, 'header'):
-                    # Type 1: Detailed symptom with header, rating, difficulty, etc.
-                    part_name = part_element.find_element(By.CLASS_NAME, 'header').find_element(By.TAG_NAME, 'a').text.strip()
-                    part_link = part_element.find_element(By.CLASS_NAME, 'header').find_element(By.TAG_NAME, 'a').get_attribute('href')
-                    part_id = part_link.split('/')[-1].split('-')[0]
-                    fix_percent = part_element.find_element(By.CLASS_NAME, 'symptoms__percent').text.strip()
-                    try:
-                        part_price = part_element.find_element(By.CLASS_NAME, 'price').text.strip()
-                        part_status = part_element.find_element(By.CLASS_NAME, 'js-partAvailability').text.strip()
-                    except selenium.common.exceptions.NoSuchElementException:
-                        part_price = "No longer available"
-                        part_status = "No longer available"
-
-                    parts_details.append(
-                        {
-                            'name': part_name,
-                            'id': part_id,
-                            'link': part_link,
-                            'price': part_price,
-                            'fix_percent': fix_percent,
-                            'status': part_status,
-                        }
-                    )
-
-                    # Extract customer stories if available
-                    customer_stories = []
-                    story_elements = part_element.find_elements(By.CLASS_NAME, 'repair-story')
-                    for story_element in story_elements:
-                        story_title = story_element.find_element(By.CLASS_NAME, 'repair-story__title').text.strip()
-                        story_content = story_element.find_element(By.CLASS_NAME, 'repair-story__instruction__content').text.strip()
-                        difficulty = ""
-                        repair_time = ""
-                        tools = ""
-
-                        # Extract additional details like difficulty, repair time, and tools
-                        details_list = story_element.find_elements(By.CSS_SELECTOR, '.repair-story__details li')
-                        for detail_item in details_list:
-                            detail_text = detail_item.text.strip()
-                            if "Difficulty Level:" in detail_text:
-                                difficulty = detail_text.split("Difficulty Level:")[1].strip()
-                            elif "Total Repair Time:" in detail_text:
-                                repair_time = detail_text.split("Total Repair Time:")[1].strip()
-                            elif "Tools:" in detail_text:
-                                tools = detail_text.split("Tools:")[1].strip()
-
-                        customer_stories.append(
-                            {
-                                'title': story_title,
-                                'content': story_content,
-                                'difficulty': difficulty,
-                                'repair_time': repair_time,
-                                'tools': tools,
-                            }
-                        )
-
-                    if customer_stories:
-                        parts_details[-1]['customer_stories'] = customer_stories
-
+                    # Type 1: Detailed symptom
+                    part_details = self._extract_part_details_type1(part_element)
                 else:
-                    # Type 2: Simple symptom without the detailed structure
-                    if part_element.get_attribute('class') and 'd-none' in part_element.get_attribute('class'):
-                        self.driver.execute_script("arguments[0].classList.remove('d-none');", part_element)
+                    # Type 2: Simple symptom
+                    part_details = self._extract_part_details_type2(part_element)
 
-                    part_name = part_element.find_element(By.CLASS_NAME, 'bold').text.strip()
-                    part_link = part_element.find_element(By.TAG_NAME, 'a').get_attribute('href')
-                    part_id = part_link.split('/')[-1].split('-')[0]
-                    fix_percent = part_element.find_element(By.CLASS_NAME, 'symptoms__percent').text.strip()
-                    try:
-                        part_price = part_element.find_element(By.CLASS_NAME, 'mega-m__part__price').text.strip()
-                        part_status = part_element.find_element(By.CLASS_NAME, 'js-tooltip').text.strip()
-                    except selenium.common.exceptions.NoSuchElementException:
-                        part_price = "No longer available"
-                        part_status = "No longer available"
+                parts_details.append(part_details)
 
-                    parts_details.append(
-                        {
-                            'name': part_name,
-                            'id': part_id,
-                            'link': part_link,
-                            'price': part_price,
-                            'fix_percent': fix_percent,
-                            'status': part_status,
-                        }
-                    )
-
-            # Return the details as a dictionary
             return {
                 'symptom_name': symptom_name,
                 'fixing_parts': parts_details,
             }
 
-        except Exception as e:
+        except (selenium.common.exceptions.NoSuchElementException, TimeoutException) as e:
             print(f"Error extracting parts for symptom '{symptom_name}': {e}")
-            return {'symptom_name': symptom_name, 'parts': []}
+            return {'symptom_name': symptom_name, 'fixing_parts': []}
 
     def _get_video_links(self, url: str):
         """Extracts video details across multiple pages, stopping when the correct number of videos is reached."""
@@ -483,7 +487,7 @@ class ModelsDetailsScraper(BaseScraper):
 
             return video_details
 
-        except Exception as e:
+        except (selenium.common.exceptions.NoSuchElementException, TimeoutException) as e:
             print(f"Error extracting video details: {e}")
             return []
 
@@ -582,7 +586,7 @@ class ModelsDetailsScraper(BaseScraper):
 
             return instruction_details
 
-        except Exception as e:
+        except (selenium.common.exceptions.NoSuchElementException, TimeoutException) as e:
             print(f"Error extracting instruction details: {e}")
             return []
 
