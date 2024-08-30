@@ -664,7 +664,6 @@ class ModelsDetailsScraper(BaseScraper):
 def main():
     """Run the scraper."""
     parser = CustomArgumentParser()
-    # parser.add_argument("--save-parts-path", type=str, default="./backend/scraper/data/parts.csv", help="Path to save parts links.")
     args = parser.parse_args()
 
     scraper = ModelsDetailsScraper(
