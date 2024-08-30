@@ -14,7 +14,7 @@ from selenium.common.exceptions import TimeoutException
 
 
 from backend.scraper.scraper import BaseScraper
-from backend.scraper.config import logging, get_args
+from backend.scraper.config import logging, CustomArgumentParser
 
 
 class ModelsDetailsScraper(BaseScraper):
@@ -616,32 +616,31 @@ class ModelsDetailsScraper(BaseScraper):
             "common_symptoms": self._get_common_symptoms(),
         }
 
-    def _load_models(self, test: bool = False):
-        file_path = "./backend/scraper/data/models.test.json" if test else "./backend/scraper/data/models.json"
+    def _load_models(self, collection: str = None):
+        file_path = f"./backend/scraper/data/models.{collection}.json" if collection else "./backend/scraper/data/models.json"
         # Load models from the database
         with open(file_path, encoding="utf-8") as f:
             models = json.load(f)
         return models
 
-    def _save_model_details(self, model_details: dict):
-        with open(f"./backend/scraper/data/models/{model_details['model_num']}.json", "w", encoding="utf-8") as f:
+    def _save_model_details(self, model_details: dict, collection: str = None):
+        file_path = f"./backend/scraper/data/models.{collection}/{model_details['model_num']}.json" if collection else f"./backend/scraper/data/models/{model_details['model_num']}.json"
+        with open(file_path, "w", encoding="utf-8") as f:
             json.dump(model_details, f, indent=4)
 
     def scrape_all_models_details(
         self,
         save_local: bool = True,
-        test: bool = False,
-        save_parts_path: str = "./backend/scraper/data/parts.csv",
+        collection: str = False,
     ):
         """Scrape all model details."""
-        if save_parts_path and test:
-            save_parts_path = save_parts_path.replace(".csv", ".test.csv")
-        if save_parts_path and not os.path.exists(save_parts_path):
+        save_parts_path = f"./backend/scraper/data/parts.{collection}.csv" if collection else "./backend/scraper/data/parts.csv"
+        if not os.path.exists(save_parts_path):
             with open(save_parts_path, "w", newline='', encoding="utf-8") as f:
                 csv_writer = csv.writer(f)
                 csv_writer.writerow(["part_link"])
 
-        models = self._load_models(test)
+        models = self._load_models(collection)
 
         for category, model_list in models.items():
             if self.verbose:
@@ -652,9 +651,9 @@ class ModelsDetailsScraper(BaseScraper):
 
                 # Save model details to the database
                 if save_local:
-                    self._save_model_details(model_details)
+                    self._save_model_details(model_details, collection)
 
-                if self.part_links and save_parts_path:
+                if self.part_links:
                     with open(save_parts_path, "a", newline='', encoding="utf-8") as f:
                         csv_writer = csv.writer(f)
                         for part_link in self.part_links:
@@ -664,7 +663,9 @@ class ModelsDetailsScraper(BaseScraper):
 
 def main():
     """Run the scraper."""
-    args = get_args()
+    parser = CustomArgumentParser()
+    # parser.add_argument("--save-parts-path", type=str, default="./backend/scraper/data/parts.csv", help="Path to save parts links.")
+    args = parser.parse_args()
 
     scraper = ModelsDetailsScraper(
         headful=args.headful,
@@ -672,7 +673,7 @@ def main():
         driver_type=args.driver,
         use_proxy=args.no_proxy,
     )
-    scraper.scrape_all_models_details(test=args.test)
+    scraper.scrape_all_models_details(collection=args.collection)
 
 
 if __name__ == "__main__":

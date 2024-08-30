@@ -24,7 +24,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
             help="Type of driver to use (undetected, Firefox, Chrome).",
         )
         self.add_argument("--no-proxy", action="store_false", help="Don't use a proxy.")
-        self.add_argument("--test", action="store_true", help="Run in test mode.")
+        self.add_argument("--collection", type=str, default=None, help="Collection of data to scrape (test, popular or all).")
 
 
 # Usage
