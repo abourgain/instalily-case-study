@@ -15,7 +15,7 @@ load_dotenv()
 graph = Graph(os.environ["NEO4J_URI"], auth=(os.environ["NEO4J_USERNAME"], os.environ["NEO4J_PASSWORD"]))
 
 
-def load_part_data(part_data: dict):
+def load_part_data(part_data: dict):  # pylint: disable=too-many-branches
     """Load part data into the Neo4j database."""
     part = Node(
         "Part",
@@ -110,7 +110,7 @@ def load_part_data(part_data: dict):
                 graph.merge(Relationship(part, "WORKS_WITH_PRODUCT_TYPE", product_type_node))
 
 
-def load_model_data(model_data: dict):
+def load_model_data(model_data: dict):  # pylint: disable=too-many-branches, too-many-statements
     """Load model data into the Neo4j database."""
     model = Node(
         "Model",
@@ -218,11 +218,11 @@ def main(collection: str = None):
     parts_dir = f"./backend/scraper/data/parts.{collection}" if collection else "./backend/scraper/data/parts"
     models_dir = f"./backend/scraper/data/models.{collection}" if collection else "./backend/scraper/data/models"
 
-    # for part_file in tqdm(os.listdir(parts_dir), desc="Uploading part data to Neo4j"):
-    #     if part_file.endswith(".json"):
-    #         with open(os.path.join(parts_dir, part_file), "r", encoding="utf-8") as part_file:
-    #             part_data = json.load(part_file)
-    #             load_part_data(part_data)
+    for part_file in tqdm(os.listdir(parts_dir), desc="Uploading part data to Neo4j"):
+        if part_file.endswith(".json"):
+            with open(os.path.join(parts_dir, part_file), "r", encoding="utf-8") as part_file:
+                part_data = json.load(part_file)
+                load_part_data(part_data)
 
     for model_file in tqdm(os.listdir(models_dir), desc="Uploading model data to Neo4j"):
         if model_file.endswith(".json"):
