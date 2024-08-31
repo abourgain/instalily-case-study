@@ -162,6 +162,8 @@ class PartsDetailsScraper(BaseScraper):
                         show_more_button.click()
                     except selenium.common.exceptions.NoSuchElementException:
                         pass  # "Show more" button not found, so no need to click it
+                    except selenium.common.exceptions.ElementNotInteractableException:
+                        pass
 
                     # Print the entire text content of the parent div after revealing the hidden parts
                     parent_div = element.find_element(By.XPATH, ".//div[@data-collapse-container]").text.strip()
@@ -279,7 +281,7 @@ class PartsDetailsScraper(BaseScraper):
             next_button.click()
             time.sleep(self._get_random_wait_time())
 
-        assert len(all_qnas) == n_qnas, f"Number of Q&As mismatch: {len(all_qnas)} vs {n_qnas}"
+        assert len(all_qnas) == n_qnas, f"Number of Q&As mismatch: {len(all_qnas)} vs {n_qnas}, for {self.driver.current_url}"
 
         return all_qnas
 
@@ -295,7 +297,9 @@ class PartsDetailsScraper(BaseScraper):
                 question = qna_element.find_element(By.CLASS_NAME, "js-searchKeys").text.strip()
                 try:
                     model = qna_element.find_element(By.CSS_SELECTOR, ".bold.mt-3.mb-3").text.strip().split("number ")[1]
-                except (selenium.common.exceptions.NoSuchElementException, IndexError):
+                except IndexError:
+                    model = "Not specified"
+                except selenium.common.exceptions.NoSuchElementException:
                     model = "Not specified"
                 answer = qna_element.find_element(By.CLASS_NAME, "qna__ps-answer__msg").text.strip()
                 date = qna_element.find_element(By.CLASS_NAME, "qna__question__date").text.strip()
