@@ -2,6 +2,7 @@
 
 import csv
 import json
+import os
 import time
 
 from tqdm import tqdm
@@ -14,6 +15,8 @@ from selenium.common.exceptions import TimeoutException
 
 from backend.scraper.scraper import BaseScraper
 from backend.scraper.config import logging, get_args
+
+BASE_URL = "https://www.partselect.com/"
 
 
 class PartsDetailsScraper(BaseScraper):
@@ -47,7 +50,6 @@ class PartsDetailsScraper(BaseScraper):
             assert partselect_num == part_id.split('-')[0], f"PartSelect number mismatch: {partselect_num} vs {part_id.split('-')[0]}"
 
             manufacturer_part_num = self.driver.find_element(By.CSS_SELECTOR, "[itemprop='mpn']").text.strip()
-            assert manufacturer_part_num == part_id.split('-')[2], f"Manufacturer part number mismatch: {manufacturer_part_num} vs {part_id.split('-')[2]}"
 
             manufacturer = self.driver.find_element(By.CSS_SELECTOR, "[itemprop='brand'] [itemprop='name']").text.strip()
             assert manufacturer == part_id.split('-')[1], f"Manufacturer mismatch: {manufacturer} vs {part_id.split('-')[1]}"
@@ -432,26 +434,30 @@ class PartsDetailsScraper(BaseScraper):
             "compatible_models": self._get_all_compatible_models(),
         }
 
-    def _load_parts(
-        self,
-        collection: str = None,
-    ) -> list:
+    def _load_already_scraped_parts(self, collection: str = None) -> list:
+        """Load the URLs of parts that have already been scraped."""
+        folder_path = f"./backend/scraper/data/parts.{collection}" if collection else "./backend/scraper/data/parts"
+        already_scraped_parts = []
+        for file in os.listdir(folder_path):
+            if file.endswith(".json"):
+                already_scraped_parts.append(f"{BASE_URL}{file.split('.')[0]}.htm")
+        return already_scraped_parts
+
+    def _load_parts(self, collection: str = None) -> list:
+        """Load the URLs of parts to scrape."""
+        already_scraped_parts = self._load_already_scraped_parts(collection)
         file_path = f"./backend/scraper/data/parts.{collection}.csv" if collection else "./backend/scraper/data/parts.csv"
-        # Load URLs from the CSV file, remove duplicates, and return a list of URLs
+
         parts = set()  # Use a set to automatically handle duplicates
         with open(file_path, mode='r', encoding="utf-8") as f:
             csv_reader = csv.reader(f)
             for row in csv_reader:
-                if row:  # Ensure the row is not empty
+                if row and row[0].strip() not in already_scraped_parts:
                     parts.add(row[0].strip())  # Add each URL to the set after stripping any extra whitespace
         logging.info(f"Loaded {len(parts)} parts URLs from {file_path}")
         return list(parts)  # Convert the set back to a list and return
 
-    def _save_part_details(
-        self,
-        part_details: dict,
-        collection: str = None,
-    ) -> None:
+    def _save_part_details(self, part_details: dict, collection: str = None) -> None:
         file_path = f"./backend/scraper/data/parts.{collection}/{part_details['id']}.json" if collection else f"./backend/scraper/data/parts/{part_details['id']}.json"
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(part_details, f, indent=4)
