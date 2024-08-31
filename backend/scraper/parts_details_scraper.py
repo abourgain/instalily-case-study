@@ -131,7 +131,7 @@ class PartsDetailsScraper(BaseScraper):
     def _get_troubleshooting(self):
         """Extracts troubleshooting details from the part details page."""
         if not self._section_exists("Troubleshooting"):
-            return
+            return {}
 
         try:
             # Locate the Troubleshooting section directly by its ID
@@ -180,7 +180,7 @@ class PartsDetailsScraper(BaseScraper):
     def _get_all_repair_stories(self):
         """Extracts all repair stories from multiple pages, navigating through pagination until 'Next' is disabled."""
         if not self._section_exists("RepairStories"):
-            return
+            return []
 
         repair_stories = []
 
@@ -251,7 +251,7 @@ class PartsDetailsScraper(BaseScraper):
     def _get_all_qnas(self):
         """Extracts all questions and answers from multiple pages, navigating through pagination until 'Next' is disabled."""
         if not self._section_exists("QuestionsAndAnswers"):
-            return
+            return []
 
         all_qnas = []
 
