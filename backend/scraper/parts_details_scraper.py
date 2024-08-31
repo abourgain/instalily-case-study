@@ -295,7 +295,7 @@ class PartsDetailsScraper(BaseScraper):
                 question = qna_element.find_element(By.CLASS_NAME, "js-searchKeys").text.strip()
                 try:
                     model = qna_element.find_element(By.CSS_SELECTOR, ".bold.mt-3.mb-3").text.strip().split("number ")[1]
-                except selenium.common.exceptions.NoSuchElementException:
+                except (selenium.common.exceptions.NoSuchElementException, IndexError):
                     model = "Not specified"
                 answer = qna_element.find_element(By.CLASS_NAME, "qna__ps-answer__msg").text.strip()
                 date = qna_element.find_element(By.CLASS_NAME, "qna__question__date").text.strip()
@@ -492,12 +492,10 @@ class PartsDetailsScraper(BaseScraper):
                 except TimeoutException:
                     logging.error(f"Timeout error scraping part details: {url}")
                     self.driver.quit()
-                    self.driver = self._setup_driver()
                     time.sleep(self._get_random_wait_time())
                 except selenium.common.exceptions.StaleElementReferenceException:
                     logging.error(f"Stale element error scraping part details: {url}")
                     self.driver.quit()
-                    self.driver = self._setup_driver()
                     time.sleep(self._get_random_wait_time())
 
             # Save part details to the database
