@@ -1,5 +1,6 @@
 """Scraper to extract detailed model information from the PartSelect website."""
 
+import csv
 import json
 import time
 
@@ -435,11 +436,16 @@ class PartsDetailsScraper(BaseScraper):
         self,
         collection: str = None,
     ) -> list:
-        file_path = f"./backend/scraper/data/parts.{collection}.json" if collection else "./backend/scraper/data/parts.json"
-        # Load models from the database
-        with open(file_path, encoding="utf-8") as f:
-            parts = json.load(f)
-        return parts
+        file_path = f"./backend/scraper/data/parts.{collection}.csv" if collection else "./backend/scraper/data/parts.csv"
+        # Load URLs from the CSV file, remove duplicates, and return a list of URLs
+        parts = set()  # Use a set to automatically handle duplicates
+        with open(file_path, mode='r', encoding="utf-8") as f:
+            csv_reader = csv.reader(f)
+            for row in csv_reader:
+                if row:  # Ensure the row is not empty
+                    parts.add(row[0].strip())  # Add each URL to the set after stripping any extra whitespace
+        logging.info(f"Loaded {len(parts)} parts URLs from {file_path}")
+        return list(parts)  # Convert the set back to a list and return
 
     def _save_part_details(
         self,
