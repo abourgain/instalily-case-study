@@ -420,8 +420,15 @@ class PartsDetailsScraper(BaseScraper):
     def scrape_part_details(self, url: str):
         """Scrape model details."""
         self.driver = self._setup_driver()
-        self.driver.get(url)
-        time.sleep(self._get_random_wait_time())
+        try:
+            self.driver.get(url)
+            time.sleep(self._get_random_wait_time())
+        except TimeoutException:  # Handle timeout exceptions
+            logging.error(f"Error loading page: {url}")
+            return {"id": url.split('/')[-1].split('.')[0]}
+        except selenium.common.exceptions.InvalidArgumentException:  # Handle invalid URL exceptions
+            logging.error(f"Invalid URL: {url}")
+            return {"id": url.split('/')[-1].split('.')[0]}
 
         return {
             **self._get_basic_infos(),
@@ -437,6 +444,8 @@ class PartsDetailsScraper(BaseScraper):
     def _load_already_scraped_parts(self, collection: str = None) -> list:
         """Load the URLs of parts that have already been scraped."""
         folder_path = f"./backend/scraper/data/parts.{collection}" if collection else "./backend/scraper/data/parts"
+        if not os.path.exists(folder_path):
+            return []
         already_scraped_parts = []
         for file in os.listdir(folder_path):
             if file.endswith(".json"):
@@ -451,6 +460,7 @@ class PartsDetailsScraper(BaseScraper):
         parts = set()  # Use a set to automatically handle duplicates
         with open(file_path, mode='r', encoding="utf-8") as f:
             csv_reader = csv.reader(f)
+            next(csv_reader)  # Skip the header row
             for row in csv_reader:
                 if row and row[0].strip() not in already_scraped_parts:
                     parts.add(row[0].strip())  # Add each URL to the set after stripping any extra whitespace
@@ -475,7 +485,20 @@ class PartsDetailsScraper(BaseScraper):
         parts_urls = self._load_parts(collection)
 
         for url in tqdm(parts_urls, desc="Scraping parts details"):
-            part_details = self.scrape_part_details(url)
+            while True:
+                try:
+                    part_details = self.scrape_part_details(url)
+                    break
+                except TimeoutException:
+                    logging.error(f"Timeout error scraping part details: {url}")
+                    self.driver.quit()
+                    self.driver = self._setup_driver()
+                    time.sleep(self._get_random_wait_time())
+                except selenium.common.exceptions.StaleElementReferenceException:
+                    logging.error(f"Stale element error scraping part details: {url}")
+                    self.driver.quit()
+                    self.driver = self._setup_driver()
+                    time.sleep(self._get_random_wait_time())
 
             # Save part details to the database
             if save_local:
