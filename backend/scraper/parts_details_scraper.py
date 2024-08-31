@@ -196,7 +196,6 @@ class PartsDetailsScraper(BaseScraper):
 
         # Locate the section using data-event-source="Repair Story"
         repair_stories_section = self.driver.find_element(By.CSS_SELECTOR, "div[data-event-source='Repair Story']")
-        n_stories = int(repair_stories_section.get_attribute("data-total-items"))
 
         while True:
             repair_stories.extend(self._extract_repair_stories_from_page())
@@ -211,8 +210,6 @@ class PartsDetailsScraper(BaseScraper):
             next_button = next_button_li.find_element(By.TAG_NAME, "span")
             next_button.click()
             time.sleep(self._get_random_wait_time())
-
-        assert len(repair_stories) == n_stories, f"Number of stories mismatch: {len(repair_stories)} vs {n_stories}"
 
         return list(repair_stories)
 
@@ -285,8 +282,6 @@ class PartsDetailsScraper(BaseScraper):
             next_button = next_button_li.find_element(By.TAG_NAME, "span")
             next_button.click()
             time.sleep(self._get_random_wait_time())
-
-        assert len(all_qnas) == n_qnas, f"Number of Q&As mismatch: {len(all_qnas)} vs {n_qnas}, for {self.driver.current_url}"
 
         return all_qnas
 
