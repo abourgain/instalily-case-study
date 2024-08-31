@@ -635,7 +635,10 @@ class ModelsDetailsScraper(BaseScraper):
         model_details: dict,
         collection: str = None,
     ):
-        file_path = f"./backend/scraper/data/models.{collection}/{model_details['model_num']}.json" if collection else f"./backend/scraper/data/models/{model_details['model_num']}.json"
+        folder_path = f"./backend/scraper/data/models.{collection}" if collection else "./backend/scraper/data/models"
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+        file_path = f"{folder_path}/{model_details['model_num']}.json"
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(model_details, f, indent=4)
 

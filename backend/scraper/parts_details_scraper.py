@@ -458,7 +458,11 @@ class PartsDetailsScraper(BaseScraper):
         return list(parts)  # Convert the set back to a list and return
 
     def _save_part_details(self, part_details: dict, collection: str = None) -> None:
-        file_path = f"./backend/scraper/data/parts.{collection}/{part_details['id']}.json" if collection else f"./backend/scraper/data/parts/{part_details['id']}.json"
+        """Save the part details to a JSON file."""
+        folder_path = f"./backend/scraper/data/parts.{collection}" if collection else "./backend/scraper/data/parts"
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+        file_path = f"{folder_path}/{part_details['id']}.json"
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(part_details, f, indent=4)
 
