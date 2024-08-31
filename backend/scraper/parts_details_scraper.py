@@ -54,7 +54,9 @@ class PartsDetailsScraper(BaseScraper):
             manufacturer = self.driver.find_element(By.CSS_SELECTOR, "[itemprop='brand'] [itemprop='name']").text.strip()
             assert manufacturer == part_id.split('-')[1], f"Manufacturer mismatch: {manufacturer} vs {part_id.split('-')[1]}"
 
-            brand_destination = self.driver.find_element(By.CSS_SELECTOR, "[itemprop='brand']").find_element(By.XPATH, "./following-sibling::span").text.strip()
+            brand_destination_text = self.driver.find_element(By.CSS_SELECTOR, "[itemprop='brand']").find_element(By.XPATH, "./following-sibling::span").text.strip()
+            brand_destination = [brand.strip() for brand in brand_destination_text.split("for")[1].split(",")]
+
             try:
                 price = self.driver.find_element(By.CLASS_NAME, 'js-partPrice').text.strip()
                 status = self.driver.find_element(By.CLASS_NAME, 'js-partAvailability').text.strip()
@@ -152,9 +154,12 @@ class PartsDetailsScraper(BaseScraper):
                 # Check the content of the element to determine what it contains
                 text_content = element.text.strip()
                 if "This part fixes the following symptoms:" in text_content:
-                    symptoms_fixed = text_content.split("This part fixes the following symptoms:")[1].strip()
+                    symptoms_fixed_text = text_content.split("This part fixes the following symptoms:")[1].strip()
+                    symptoms_fixed = [symptom.strip() for symptom in symptoms_fixed_text.split("|")]
+
                 elif "This part works with the following products:" in text_content:
-                    works_with_products = text_content.split("This part works with the following products:")[1].replace(".", "").strip()
+                    works_with_products_text = text_content.split("This part works with the following products:")[1].replace(".", "").strip()
+                    works_with_products = [product.strip() for product in works_with_products_text.split(",")]
                 elif "Part# " in text_content:
                     # Click on "Show more" if it exists to reveal hidden parts
                     try:
