@@ -1,5 +1,11 @@
 @import "rsuite/dist/rsuite.css";
 
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* Full height to position elements correctly */
+}
+
 .messages-container {
   flex: 1;
   overflow-y: auto;
@@ -11,6 +17,7 @@
   font-size: 16px;
   margin-top: 60px; 
   margin-bottom: 70px; 
+  position: relative;
 }
 
 .user-message-container,
@@ -69,13 +76,13 @@
 .input-area {
   font-size: 15px;
   padding: 10px;
-  bottom: 0;
-  width: 100%;
+  width: calc(100% - 40px);
   display: flex;
   border-top: 1px solid #ccc;
   background: #fff;
   position: fixed;
-  width: calc(100% - 40px);
+  bottom: 0; /* Keep it fixed at the bottom */
+  left: 20px; /* Align with the messages container padding */
 }
 
 .input-area textarea {
@@ -100,6 +107,14 @@
   font-size: 13px;
 }
 
+.input-area button,
+.loading-spinner {
+  width: 70px; /* Set a fixed width */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .input-area button {
   padding: 10px 20px;
   border: none;
@@ -108,4 +123,19 @@
   color: white;
   cursor: pointer;
   font-size: 13px;
+}
+
+.spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-left-color: #09f;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
 }
