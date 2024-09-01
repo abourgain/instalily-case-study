@@ -10,6 +10,9 @@ front:
 back: 
 	python3 -m backend.main 
 
+build:
+	cd ./frontend; npm run build
+
 ### ---------------   Lint  --------------- ###
 
 eslint:
