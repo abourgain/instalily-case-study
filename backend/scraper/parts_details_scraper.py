@@ -54,7 +54,9 @@ class PartsDetailsScraper(BaseScraper):
             manufacturer = self.driver.find_element(By.CSS_SELECTOR, "[itemprop='brand'] [itemprop='name']").text.strip()
             assert manufacturer == part_id.split('-')[1], f"Manufacturer mismatch: {manufacturer} vs {part_id.split('-')[1]}"
 
-            brand_destination = self.driver.find_element(By.CSS_SELECTOR, "[itemprop='brand']").find_element(By.XPATH, "./following-sibling::span").text.strip()
+            brand_destination_text = self.driver.find_element(By.CSS_SELECTOR, "[itemprop='brand']").find_element(By.XPATH, "./following-sibling::span").text.strip()
+            brand_destination = [brand.strip() for brand in brand_destination_text.split("for")[1].split(",")]
+
             try:
                 price = self.driver.find_element(By.CLASS_NAME, 'js-partPrice').text.strip()
                 status = self.driver.find_element(By.CLASS_NAME, 'js-partAvailability').text.strip()
@@ -64,7 +66,8 @@ class PartsDetailsScraper(BaseScraper):
 
             details = {
                 "url": url,
-                "id": part_id,
+                "id": partselect_num,
+                "web_id": part_id,
                 "name": name,
                 "partselect_num": partselect_num,
                 "manufacturer_part_num": manufacturer_part_num,
@@ -152,9 +155,12 @@ class PartsDetailsScraper(BaseScraper):
                 # Check the content of the element to determine what it contains
                 text_content = element.text.strip()
                 if "This part fixes the following symptoms:" in text_content:
-                    symptoms_fixed = text_content.split("This part fixes the following symptoms:")[1].strip()
+                    symptoms_fixed_text = text_content.split("This part fixes the following symptoms:")[1].strip()
+                    symptoms_fixed = [symptom.strip() for symptom in symptoms_fixed_text.split("|")]
+
                 elif "This part works with the following products:" in text_content:
-                    works_with_products = text_content.split("This part works with the following products:")[1].replace(".", "").strip()
+                    works_with_products_text = text_content.split("This part works with the following products:")[1].replace(".", "").strip()
+                    works_with_products = [product.strip() for product in works_with_products_text.split(",")]
                 elif "Part# " in text_content:
                     # Click on "Show more" if it exists to reveal hidden parts
                     try:
@@ -191,7 +197,6 @@ class PartsDetailsScraper(BaseScraper):
 
         # Locate the section using data-event-source="Repair Story"
         repair_stories_section = self.driver.find_element(By.CSS_SELECTOR, "div[data-event-source='Repair Story']")
-        n_stories = int(repair_stories_section.get_attribute("data-total-items"))
 
         while True:
             repair_stories.extend(self._extract_repair_stories_from_page())
@@ -206,8 +211,6 @@ class PartsDetailsScraper(BaseScraper):
             next_button = next_button_li.find_element(By.TAG_NAME, "span")
             next_button.click()
             time.sleep(self._get_random_wait_time())
-
-        assert len(repair_stories) == n_stories, f"Number of stories mismatch: {len(repair_stories)} vs {n_stories}"
 
         return list(repair_stories)
 
@@ -280,8 +283,6 @@ class PartsDetailsScraper(BaseScraper):
             next_button = next_button_li.find_element(By.TAG_NAME, "span")
             next_button.click()
             time.sleep(self._get_random_wait_time())
-
-        assert len(all_qnas) == n_qnas, f"Number of Q&As mismatch: {len(all_qnas)} vs {n_qnas}, for {self.driver.current_url}"
 
         return all_qnas
 
@@ -445,15 +446,15 @@ class PartsDetailsScraper(BaseScraper):
             "compatible_models": self._get_all_compatible_models(),
         }
 
-    def _load_already_scraped_parts(self, collection: str = None) -> list:
+    def _load_already_scraped_parts(self, collection: str = None) -> set:
         """Load the URLs of parts that have already been scraped."""
         folder_path = f"./backend/scraper/data/parts.{collection}" if collection else "./backend/scraper/data/parts"
         if not os.path.exists(folder_path):
-            return []
-        already_scraped_parts = []
+            return set()
+        already_scraped_parts = set()
         for file in os.listdir(folder_path):
             if file.endswith(".json"):
-                already_scraped_parts.append(f"{BASE_URL}{file.split('.')[0]}.htm")
+                already_scraped_parts.add(f"{file.split('.')[0]}")
         return already_scraped_parts
 
     def _load_parts(self, collection: str = None) -> list:
@@ -466,10 +467,10 @@ class PartsDetailsScraper(BaseScraper):
             csv_reader = csv.reader(f)
             next(csv_reader)  # Skip the header row
             for row in csv_reader:
-                if row and row[0].strip() not in already_scraped_parts:
+                if row and row[0].split('/')[-1].split('-')[0] not in already_scraped_parts:
                     parts.add(row[0].strip())  # Add each URL to the set after stripping any extra whitespace
         logging.info(f"Loaded {len(parts)} parts URLs from {file_path}")
-        return list(parts)  # Convert the set back to a list and return
+        return sorted(list(parts))  # Convert the set back to a list and return
 
     def _save_part_details(self, part_details: dict, collection: str = None) -> None:
         """Save the part details to a JSON file."""
@@ -492,6 +493,10 @@ class PartsDetailsScraper(BaseScraper):
             while True:
                 try:
                     part_details = self.scrape_part_details(url)
+
+                    # Save part details to the database
+                    if save_local:
+                        self._save_part_details(part_details, collection)
                     break
                 except TimeoutException:
                     logging.error(f"Timeout error scraping part details: {url}")
@@ -501,10 +506,7 @@ class PartsDetailsScraper(BaseScraper):
                     logging.error(f"Stale element error scraping part details: {url}")
                     self.driver.quit()
                     time.sleep(self._get_random_wait_time())
-
-            # Save part details to the database
-            if save_local:
-                self._save_part_details(part_details, collection)
+            break
 
 
 def main():

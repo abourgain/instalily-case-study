@@ -15,3 +15,12 @@ dependencies:
       - pyyaml
       - lxml
       - tqdm
+      - py2neo
+      - langchain
+      - openai
+      - langchain-community
+      - neo4j
+      - tiktoken
+      - langchain-openai
+      - fastapi
+      - uvicorn
