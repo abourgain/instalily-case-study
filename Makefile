@@ -7,6 +7,9 @@ install:
 front:
 	cd ./frontend; npm start
 
+back: 
+	python3 -m backend.main 
+
 ### ---------------   Lint  --------------- ###
 
 eslint:
