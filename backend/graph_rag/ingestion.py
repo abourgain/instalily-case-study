@@ -11,17 +11,14 @@ from tqdm import tqdm
 load_dotenv()
 
 
-# Connect to Neo4j
-graph = Graph(os.environ["NEO4J_URI"], auth=(os.environ["NEO4J_USERNAME"], os.environ["NEO4J_PASSWORD"]))
-
-
-def load_part_data(part_data: dict):  # pylint: disable=too-many-branches
+def load_part_data(part_data: dict, graph: Graph):  # pylint: disable=too-many-branches
     """Load part data into the Neo4j database."""
     part = Node(
         "Part",
         id=part_data['id'],
         url=part_data['url'],
         name=part_data['name'],
+        web_id=part_data['web_id'],
         partselect_num=part_data['partselect_num'],
         manufacturer_part_num=part_data['manufacturer_part_num'],
         price=part_data['price'] if 'price' in part_data else None,
@@ -110,7 +107,7 @@ def load_part_data(part_data: dict):  # pylint: disable=too-many-branches
                 graph.merge(Relationship(part, "WORKS_WITH_PRODUCT_TYPE", product_type_node))
 
 
-def load_model_data(model_data: dict):  # pylint: disable=too-many-branches, too-many-statements
+def load_model_data(model_data: dict, graph: Graph):  # pylint: disable=too-many-branches, too-many-statements
     """Load model data into the Neo4j database."""
     model = Node(
         "Model",
@@ -215,6 +212,15 @@ def load_model_data(model_data: dict):  # pylint: disable=too-many-branches, too
 def main(collection: str = None):
     """Load part and model data into the Neo4j database."""
 
+    # Connect to Neo4j
+    graph = Graph(
+        os.environ[f"NEO4J_{collection.upper()}_URI"],
+        auth=(
+            os.environ[f"NEO4J_{collection.upper()}_USERNAME"],
+            os.environ[f"NEO4J_{collection.upper()}_PASSWORD"],
+        ),
+    )
+
     parts_dir = f"./backend/scraper/data/parts.{collection}" if collection else "./backend/scraper/data/parts"
     models_dir = f"./backend/scraper/data/models.{collection}" if collection else "./backend/scraper/data/models"
 
@@ -222,13 +228,13 @@ def main(collection: str = None):
         if part_file.endswith(".json"):
             with open(os.path.join(parts_dir, part_file), "r", encoding="utf-8") as part_file:
                 part_data = json.load(part_file)
-                load_part_data(part_data)
+                load_part_data(part_data, graph)
 
     for model_file in tqdm(os.listdir(models_dir), desc="Uploading model data to Neo4j"):
         if model_file.endswith(".json"):
             with open(os.path.join(models_dir, model_file), "r", encoding="utf-8") as model_file:
                 model_data = json.load(model_file)
-                load_model_data(model_data)
+                load_model_data(model_data, graph)
 
 
 if __name__ == "__main__":
