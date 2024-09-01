@@ -1,3 +1,5 @@
+"""Controller for the AI agent."""
+
 from backend.graph_rag.ai_agent import Agent
 
 
