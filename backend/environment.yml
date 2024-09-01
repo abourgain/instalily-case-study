@@ -21,3 +21,6 @@ dependencies:
       - langchain-community
       - neo4j
       - tiktoken
+      - langchain-openai
+      - fastapi
+      - uvicorn

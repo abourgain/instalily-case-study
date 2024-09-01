@@ -1,6 +1,6 @@
 ## Entities
 
-- **Part** (Attributes: `id`, `url`, `name`, `partselect_num`, `manufacturer_part_num`, `price`, `status`, `installation_difficulty`, `installation_time`, `description`, `works_with_products`)
+- **Part** (Attributes: `id`, `url`, `name`, `partselect_num`, `manufacturer_part_num`, `price`, `status`, `installation_difficulty`, `installation_time`, `description`, `works_with_products`, `web_id`)
 - **Manufacturer** (Attribute: `name`)
 - **Brand** (Attribute: `name`)
 - **ProductType** (Attribute: `name`)

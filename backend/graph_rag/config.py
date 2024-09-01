@@ -11,6 +11,7 @@ load_dotenv()
 
 EMBEDDINGS_MODEL = "text-embedding-3-small"
 
+
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 neo4j_graph = Neo4jGraph(
