@@ -66,7 +66,8 @@ class PartsDetailsScraper(BaseScraper):
 
             details = {
                 "url": url,
-                "id": part_id,
+                "id": partselect_num,
+                "web_id": part_id,
                 "name": name,
                 "partselect_num": partselect_num,
                 "manufacturer_part_num": manufacturer_part_num,
@@ -445,15 +446,15 @@ class PartsDetailsScraper(BaseScraper):
             "compatible_models": self._get_all_compatible_models(),
         }
 
-    def _load_already_scraped_parts(self, collection: str = None) -> list:
+    def _load_already_scraped_parts(self, collection: str = None) -> set:
         """Load the URLs of parts that have already been scraped."""
         folder_path = f"./backend/scraper/data/parts.{collection}" if collection else "./backend/scraper/data/parts"
         if not os.path.exists(folder_path):
-            return []
-        already_scraped_parts = []
+            return set()
+        already_scraped_parts = set()
         for file in os.listdir(folder_path):
             if file.endswith(".json"):
-                already_scraped_parts.append(f"{BASE_URL}{file.split('.')[0]}.htm")
+                already_scraped_parts.add(f"{file.split('.')[0]}")
         return already_scraped_parts
 
     def _load_parts(self, collection: str = None) -> list:
@@ -466,10 +467,10 @@ class PartsDetailsScraper(BaseScraper):
             csv_reader = csv.reader(f)
             next(csv_reader)  # Skip the header row
             for row in csv_reader:
-                if row and row[0].strip() not in already_scraped_parts:
+                if row and row[0].split('/')[-1].split('-')[0] not in already_scraped_parts:
                     parts.add(row[0].strip())  # Add each URL to the set after stripping any extra whitespace
         logging.info(f"Loaded {len(parts)} parts URLs from {file_path}")
-        return list(parts)  # Convert the set back to a list and return
+        return sorted(list(parts))  # Convert the set back to a list and return
 
     def _save_part_details(self, part_details: dict, collection: str = None) -> None:
         """Save the part details to a JSON file."""
@@ -492,6 +493,10 @@ class PartsDetailsScraper(BaseScraper):
             while True:
                 try:
                     part_details = self.scrape_part_details(url)
+
+                    # Save part details to the database
+                    if save_local:
+                        self._save_part_details(part_details, collection)
                     break
                 except TimeoutException:
                     logging.error(f"Timeout error scraping part details: {url}")
@@ -501,10 +506,7 @@ class PartsDetailsScraper(BaseScraper):
                     logging.error(f"Stale element error scraping part details: {url}")
                     self.driver.quit()
                     time.sleep(self._get_random_wait_time())
-
-            # Save part details to the database
-            if save_local:
-                self._save_part_details(part_details, collection)
+            break
 
 
 def main():
