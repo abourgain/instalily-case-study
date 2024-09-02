@@ -1,6 +1,7 @@
 """Scraper to extract models from the PartSelect website."""
 
 import json
+import os
 import time
 
 from tqdm import tqdm
@@ -8,7 +9,7 @@ import selenium
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 
-from backend.scraper.config import logging, get_args
+from backend.scraper.config import CustomArgumentParser, logging
 from backend.scraper.scraper import BaseScraper
 
 
@@ -133,6 +134,9 @@ class ModelsScraper(BaseScraper):
             models_data[category] = all_models
 
         if save_local:
+            # Create "./backend/scraper/data/" directory if it doesn't exist
+            if not os.path.exists("./backend/scraper/data/"):
+                os.makedirs("./backend/scraper/data/")
             file_path = "./backend/scraper/data/models.json"
             if self.verbose:
                 logging.info("Saving scraped data to JSON file %s...", file_path)
@@ -143,7 +147,8 @@ class ModelsScraper(BaseScraper):
 
 def main():
     """Run the scraper."""
-    args = get_args()
+    parser = CustomArgumentParser()
+    args = parser.parse_args()
 
     scraper = ModelsScraper(headful=args.headful, verbose=args.verbose, driver_type=args.driver, use_proxy=args.no_proxy)
     scraper.scrape_models()
