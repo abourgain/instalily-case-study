@@ -18,7 +18,7 @@ def load_part_data(part_data: dict, graph: Graph):  # pylint: disable=too-many-b
         id=part_data['id'],
         url=part_data['url'],
         name=part_data['name'],
-        web_id=part_data['web_id'],
+        web_id=part_data['web_id'] if 'web_id' in part_data else None,
         partselect_num=part_data['partselect_num'],
         manufacturer_part_num=part_data['manufacturer_part_num'],
         price=part_data['price'] if 'price' in part_data else None,
@@ -224,17 +224,17 @@ def main(collection: str = None):
     parts_dir = f"./backend/scraper/data/parts.{collection}" if collection else "./backend/scraper/data/parts"
     models_dir = f"./backend/scraper/data/models.{collection}" if collection else "./backend/scraper/data/models"
 
-    for part_file in tqdm(os.listdir(parts_dir), desc="Uploading part data to Neo4j"):
-        if part_file.endswith(".json"):
-            with open(os.path.join(parts_dir, part_file), "r", encoding="utf-8") as part_file:
-                part_data = json.load(part_file)
-                load_part_data(part_data, graph)
-
     for model_file in tqdm(os.listdir(models_dir), desc="Uploading model data to Neo4j"):
         if model_file.endswith(".json"):
             with open(os.path.join(models_dir, model_file), "r", encoding="utf-8") as model_file:
                 model_data = json.load(model_file)
                 load_model_data(model_data, graph)
+
+    for part_file in tqdm(os.listdir(parts_dir), desc="Uploading part data to Neo4j"):
+        if part_file.endswith(".json"):
+            with open(os.path.join(parts_dir, part_file), "r", encoding="utf-8") as part_file:
+                part_data = json.load(part_file)
+                load_part_data(part_data, graph)
 
 
 if __name__ == "__main__":
