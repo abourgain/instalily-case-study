@@ -113,9 +113,7 @@ def query_db(query: str) -> list:  # pylint: disable=too-many-branches
             if not entity_data:
                 continue
             matche = {}
-            try:
-                _ = entity_data["id"]
-            except TypeError:
+            if not isinstance(entity_data, dict):
                 entity_data = json.loads(entity_data)
             if "id" in entity_data:
                 matche["id"] = entity_data["id"]

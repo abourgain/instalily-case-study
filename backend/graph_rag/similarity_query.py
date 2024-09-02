@@ -149,9 +149,7 @@ def similarity_search(prompt: str, threshold: float = 0.9):  # pylint: disable=t
                 entity_data = value
                 if not entity_data:
                     continue
-                try:
-                    _ = entity_data["id"]
-                except TypeError:
+                if not isinstance(entity_data, dict):
                     entity_data = json.loads(entity_data)
                 matche = {"type": entity_label}
                 if "id" in entity_data:
