@@ -57,7 +57,7 @@ def create_embedding(text: str):
     return result.data[0].embedding
 
 
-def similarity_search(prompt: str, threshold: float = 0.9):
+def similarity_search(prompt: str, threshold: float = 0.9):  # pylint: disable=too-many-branches, too-many-statements
     """Function to perform similarity search in a graph database using embeddings."""
     matches = []
 
@@ -95,7 +95,7 @@ def similarity_search(prompt: str, threshold: float = 0.9):
             query = f'''
                 MATCH (e:{entity_label})
                 RETURN e
-                LIMIT 5
+                LIMIT 10
             '''
             while True:
                 try:  # Attempt to query the graph
@@ -133,7 +133,7 @@ def similarity_search(prompt: str, threshold: float = 0.9):
             WITH e, dot_product / (sqrt(input_norm) * sqrt(embedding_norm)) AS cosine_similarity
             WHERE cosine_similarity > $threshold
             RETURN e
-            LIMIT 5
+            LIMIT 10
             '''
 
             while True:
@@ -147,7 +147,45 @@ def similarity_search(prompt: str, threshold: float = 0.9):
         for r in result:
             for _, value in r.items():
                 entity_data = value
-                matches.append({"id": entity_data.get('id', 'Unknown ID'), "name": entity_data.get('name', 'Unnamed Entity'), "type": entity_label})
+                matche = {"type": entity_label}
+                if "id" in entity_data:
+                    matche["id"] = entity_data["id"]
+                if "name" in entity_data:
+                    matche["name"] = entity_data["name"]
+                if "description" in entity_data:
+                    matche["description"] = entity_data["description"]
+                if "url" in entity_data:
+                    matche["url"] = entity_data["url"]
+                if "price" in entity_data:
+                    matche["price"] = entity_data["price"]
+                if "status" in entity_data:
+                    matche["status"] = entity_data["status"]
+                if "difficulty" in entity_data:
+                    matche["difficulty"] = entity_data["difficulty"]
+                if "repair_time" in entity_data:
+                    matche["repair_time"] = entity_data["repair_time"]
+                if "works_with_products" in entity_data:
+                    matche["works_with_products"] = entity_data["works_with_products"]
+                if "web_id" in entity_data:
+                    matche["web_id"] = entity_data["web_id"]
+                if "model_num" in entity_data:
+                    matche["model_num"] = entity_data["model_num"]
+                if "partselect_num" in entity_data:
+                    matche["partselect_num"] = entity_data["partselect_num"]
+                if "manufacturer_part_num" in entity_data:
+                    matche["manufacturer_part_num"] = entity_data["manufacturer_part_num"]
+                if "content" in entity_data:
+                    matche["content"] = entity_data["content"]
+                if "tools" in entity_data:
+                    matche["tools"] = entity_data["tools"]
+                if "question" in entity_data:
+                    matche["question"] = entity_data["question"]
+                if "answer" in entity_data:
+                    matche["answer"] = entity_data["answer"]
+                if "date" in entity_data:
+                    matche["date"] = entity_data["date"]
+
+                matches.append(matche)
 
     return matches
 

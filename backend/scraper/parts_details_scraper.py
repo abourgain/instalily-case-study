@@ -85,8 +85,8 @@ class PartsDetailsScraper(BaseScraper):
                 time_required = None
 
             if difficulty and time_required:
-                details["installation_difficulty"] = difficulty
-                details["installation_time"] = time_required
+                details["difficulty"] = difficulty
+                details["repair_time"] = time_required
 
             return details
 
@@ -126,7 +126,7 @@ class PartsDetailsScraper(BaseScraper):
                 youtube_link = f"https://www.youtube.com/watch?v={yt_video_id}"
                 video_title = video_element.find_element(By.XPATH, ".//img").get_attribute("alt").strip()
 
-                videos.append({"youtube_link": youtube_link, "video_title": video_title})
+                videos.append({"url": youtube_link, "name": video_title})
 
             return videos
 
@@ -376,7 +376,7 @@ class PartsDetailsScraper(BaseScraper):
                     {
                         "name": part_name,
                         "id": part_id,
-                        "link": part_link,
+                        "url": part_link,
                         "price": price,
                         "status": status,
                     }
@@ -412,7 +412,7 @@ class PartsDetailsScraper(BaseScraper):
                     {
                         "brand": brand,
                         "model_num": model_number,
-                        "model_link": model_link,
+                        "url": model_link,
                         "description": description,
                     }
                 )

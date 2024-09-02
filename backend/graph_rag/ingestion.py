@@ -11,23 +11,20 @@ from tqdm import tqdm
 load_dotenv()
 
 
-# Connect to Neo4j
-graph = Graph(os.environ["NEO4J_URI"], auth=(os.environ["NEO4J_USERNAME"], os.environ["NEO4J_PASSWORD"]))
-
-
-def load_part_data(part_data: dict):  # pylint: disable=too-many-branches
+def load_part_data(part_data: dict, graph: Graph):  # pylint: disable=too-many-branches
     """Load part data into the Neo4j database."""
     part = Node(
         "Part",
         id=part_data['id'],
         url=part_data['url'],
         name=part_data['name'],
+        web_id=part_data['web_id'] if 'web_id' in part_data else None,
         partselect_num=part_data['partselect_num'],
         manufacturer_part_num=part_data['manufacturer_part_num'],
         price=part_data['price'] if 'price' in part_data else None,
         status=part_data['status'] if 'status' in part_data else None,
-        installation_difficulty=part_data['installation_difficulty'] if 'installation_difficulty' in part_data else None,
-        installation_time=part_data['installation_time'] if 'installation_time' in part_data else None,
+        difficulty=part_data['difficulty'] if 'difficulty' in part_data else None,
+        repair_time=part_data['repair_time'] if 'repair_time' in part_data else None,
         description=part_data['description'] if 'description' in part_data else None,
     )
     graph.merge(part, "Part", "id")
@@ -54,15 +51,15 @@ def load_part_data(part_data: dict):  # pylint: disable=too-many-branches
     # Handle Videos
     if "videos" in part_data:
         for video in part_data['videos']:
-            video_node = Node("Video", youtube_link=video['youtube_link'], video_title=video['video_title'])
-            graph.merge(video_node, "Video", "youtube_link")
+            video_node = Node("Video", url=video['url'], name=video['name'])
+            graph.merge(video_node, "Video", "url")
             graph.merge(Relationship(part, "HAS_VIDEO", video_node))
 
     # Handle Symptoms
     if "troubleshooting" in part_data and "symptoms_fixed" in part_data['troubleshooting']:
         for symptom_name in part_data['troubleshooting']['symptoms_fixed']:
-            symptom_node = Node("Symptom", symptom_name=symptom_name)
-            graph.merge(symptom_node, "Symptom", "symptom_name")
+            symptom_node = Node("Symptom", name=symptom_name)
+            graph.merge(symptom_node, "Symptom", "name")
             graph.merge(Relationship(part, "FIXES_SYMPTOM", symptom_node))
 
     # Handle Stories
@@ -89,7 +86,7 @@ def load_part_data(part_data: dict):  # pylint: disable=too-many-branches
     # Handle Related Parts
     if "related_parts" in part_data:
         for related_part in part_data['related_parts']:
-            related_part_node = Node("Part", id=related_part['id'], name=related_part['name'], price=related_part['price'], status=related_part['status'], link=related_part['link'])
+            related_part_node = Node("Part", id=related_part['id'], name=related_part['name'], price=related_part['price'], status=related_part['status'], url=related_part['url'])
             graph.merge(related_part_node, "Part", "id")
             graph.merge(Relationship(part, "RELATED_TO", related_part_node))
 
@@ -110,7 +107,7 @@ def load_part_data(part_data: dict):  # pylint: disable=too-many-branches
                 graph.merge(Relationship(part, "WORKS_WITH_PRODUCT_TYPE", product_type_node))
 
 
-def load_model_data(model_data: dict):  # pylint: disable=too-many-branches, too-many-statements
+def load_model_data(model_data: dict, graph: Graph):  # pylint: disable=too-many-branches, too-many-statements
     """Load model data into the Neo4j database."""
     model = Node(
         "Model",
@@ -133,14 +130,14 @@ def load_model_data(model_data: dict):  # pylint: disable=too-many-branches, too
     # Handle Sections
     if "sections" in model_data:
         for section in model_data['sections']:
-            section_node = Node("Section", name=section['name'], link=section['link'])
+            section_node = Node("Section", name=section['name'], url=section['url'])
             graph.merge(section_node, "Section", "name")
             graph.merge(Relationship(model, "HAS_SECTION", section_node))
 
     # Handle Manuals
     if "manuals" in model_data:
         for manual in model_data['manuals']:
-            manual_node = Node("Manual", name=manual['name'], link=manual['link'])
+            manual_node = Node("Manual", name=manual['name'], url=manual['url'])
             graph.merge(manual_node, "Manual", "name")
             graph.merge(Relationship(model, "HAS_MANUAL", manual_node))
 
@@ -168,8 +165,8 @@ def load_model_data(model_data: dict):  # pylint: disable=too-many-branches, too
     # Handle Videos
     if "videos" in model_data:
         for video in model_data['videos']:
-            video_node = Node("Video", youtube_link=video['youtube_link'], video_title=video['video_title'])
-            graph.merge(video_node, "Video", "youtube_link")
+            video_node = Node("Video", url=video['url'], name=video['name'])
+            graph.merge(video_node, "Video", "url")
             graph.merge(Relationship(model, "HAS_VIDEO", video_node))
             # Link video to parts
             if "parts" in video:
@@ -185,8 +182,8 @@ def load_model_data(model_data: dict):  # pylint: disable=too-many-branches, too
                 "InstallationInstruction",
                 title=instruction['title'],
                 content=instruction['content'],
-                difficulty_level=instruction['difficulty_level'],
-                total_repair_time=instruction['total_repair_time'],
+                difficulty=instruction['difficulty'],
+                repair_time=instruction['repair_time'],
                 tools=instruction['tools'],
             )
             graph.merge(instruction_node, "InstallationInstruction", "title")
@@ -201,8 +198,8 @@ def load_model_data(model_data: dict):  # pylint: disable=too-many-branches, too
     # Handle Symptoms
     if "common_symptoms" in model_data:
         for symptom in model_data['common_symptoms']:
-            symptom_node = Node("Symptom", symptom_name=symptom['symptom_name'])
-            graph.merge(symptom_node, "Symptom", "symptom_name")
+            symptom_node = Node("Symptom", name=symptom['name'])
+            graph.merge(symptom_node, "Symptom", "name")
             graph.merge(Relationship(model, "HAS_SYMPTOM", symptom_node))
             # Link symptom to fixing parts
             if "fixing_parts" in symptom:
@@ -215,20 +212,29 @@ def load_model_data(model_data: dict):  # pylint: disable=too-many-branches, too
 def main(collection: str = None):
     """Load part and model data into the Neo4j database."""
 
+    # Connect to Neo4j
+    graph = Graph(
+        os.environ[f"NEO4J_{collection.upper()}_URI"],
+        auth=(
+            os.environ[f"NEO4J_{collection.upper()}_USERNAME"],
+            os.environ[f"NEO4J_{collection.upper()}_PASSWORD"],
+        ),
+    )
+
     parts_dir = f"./backend/scraper/data/parts.{collection}" if collection else "./backend/scraper/data/parts"
     models_dir = f"./backend/scraper/data/models.{collection}" if collection else "./backend/scraper/data/models"
-
-    for part_file in tqdm(os.listdir(parts_dir), desc="Uploading part data to Neo4j"):
-        if part_file.endswith(".json"):
-            with open(os.path.join(parts_dir, part_file), "r", encoding="utf-8") as part_file:
-                part_data = json.load(part_file)
-                load_part_data(part_data)
 
     for model_file in tqdm(os.listdir(models_dir), desc="Uploading model data to Neo4j"):
         if model_file.endswith(".json"):
             with open(os.path.join(models_dir, model_file), "r", encoding="utf-8") as model_file:
                 model_data = json.load(model_file)
-                load_model_data(model_data)
+                load_model_data(model_data, graph)
+
+    for part_file in tqdm(os.listdir(parts_dir), desc="Uploading part data to Neo4j"):
+        if part_file.endswith(".json"):
+            with open(os.path.join(parts_dir, part_file), "r", encoding="utf-8") as part_file:
+                part_data = json.load(part_file)
+                load_part_data(part_data, graph)
 
 
 if __name__ == "__main__":
