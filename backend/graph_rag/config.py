@@ -1,6 +1,7 @@
 """Configuration file for the backend application."""
 
 import os
+import logging
 
 from openai import OpenAI
 from langchain_community.graphs import Neo4jGraph
@@ -9,15 +10,17 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+logging.basicConfig(level=logging.INFO)
+
 EMBEDDINGS_MODEL = "text-embedding-3-small"
 
 
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 neo4j_graph = Neo4jGraph(
-    url=os.environ["NEO4J_URI"],
-    username=os.environ["NEO4J_USERNAME"],
-    password=os.environ["NEO4J_PASSWORD"],
+    url=os.environ.get("NEO4J_CURRENT_URI"),
+    username=os.environ.get("NEO4J_CURRENT_USERNAME"),
+    password=os.environ.get("NEO4J_CURRENT_PASSWORD"),
 )
 
 ENTITY_TYPES = {
