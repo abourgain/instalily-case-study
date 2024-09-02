@@ -3,7 +3,7 @@ export const getAIMessage = async (userQuery) => {
     const sessionId = sessionStorage.getItem("sessionId") || ""; // Retrieve session ID from sessionStorage
 
     const response = await fetch(
-      `http://localhost:8000/agent?message=${encodeURIComponent(
+      `https://partselect-chatbot.onrender.com/agent?message=${encodeURIComponent(
         userQuery
       )}&session=${encodeURIComponent(sessionId)}`,
       {
