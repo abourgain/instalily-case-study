@@ -57,7 +57,7 @@ def create_embedding(text: str):
     return result.data[0].embedding
 
 
-def similarity_search(prompt: str, threshold: float = 0.9):
+def similarity_search(prompt: str, threshold: float = 0.9):  # pylint: disable=too-many-branches, too-many-statements
     """Function to perform similarity search in a graph database using embeddings."""
     matches = []
 

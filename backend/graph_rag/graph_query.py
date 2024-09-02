@@ -102,7 +102,7 @@ def query_graph(user_input: str, threshold: float = 0.8):
     return result
 
 
-def query_db(query: str) -> list:
+def query_db(query: str) -> list:  # pylint: disable=too-many-branches
     """Function to query the Neo4j graph database based on user input."""
     matches = []
     result = query_graph(query)
