@@ -1,5 +1,6 @@
 """Script to generate Cypher queries based on user input and query a Neo4j graph database."""
 
+import json
 from openai import OpenAIError
 
 from backend.graph_rag.config import client, neo4j_graph
@@ -109,7 +110,13 @@ def query_db(query: str) -> list:  # pylint: disable=too-many-branches
     for r in result:
         for _, value in r.items():
             entity_data = value
+            if not entity_data:
+                continue
             matche = {}
+            try:
+                _ = entity_data["id"]
+            except TypeError:
+                entity_data = json.loads(entity_data)
             if "id" in entity_data:
                 matche["id"] = entity_data["id"]
             if "name" in entity_data:
