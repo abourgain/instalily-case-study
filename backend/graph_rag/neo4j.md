@@ -1,18 +1,17 @@
 ## Entities
 
-- **Part** (Attributes: `id`, `url`, `name`, `partselect_num`, `manufacturer_part_num`, `price`, `status`, `installation_difficulty`, `installation_time`, `description`, `works_with_products`, `web_id`)
+- **Part** (Attributes: `id`, `url`, `name`, `partselect_num`, `manufacturer_part_num`, `price`, `status`, `difficulty`, `repair_time`, `description`, `works_with_products`, `web_id`)
 - **Manufacturer** (Attribute: `name`)
 - **Brand** (Attribute: `name`)
 - **ProductType** (Attribute: `name`)
 - **Model** (Attributes: `model_num`, `name`, `url`)
-- **Video** (Attributes: `youtube_link`, `video_title`)
-- **Symptom** (Attribute: `symptom_name`)
+- **Video** (Attributes: `url`, `name`)
+- **Symptom** (Attribute: `name`)
 - **Story** (Attributes: `title`, `content`, `difficulty`, `repair_time`, `tools`)
 - **QnA** (Attributes: `question`, `model`, `answer`, `date`)
-- **RelatedPart** (Attributes: `id`, `name`, `price`, `status`, `link`)
-- **Section** (Attributes: `name`, `link`)
-- **Manual** (Attributes: `name`, `link`)
-- **InstallationInstruction** (Attributes: `title`, `content`, `difficulty_level`, `total_repair_time`, `tools`)
+- **Section** (Attributes: `name`, `url`)
+- **Manual** (Attributes: `name`, `url`)
+- **InstallationInstruction** (Attributes: `title`, `content`, `difficulty`, `repair_time`, `tools`)
 
 ## Relationships
 

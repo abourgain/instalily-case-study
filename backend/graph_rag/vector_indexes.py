@@ -17,8 +17,8 @@ load_dotenv()
 ENTITIES_TO_EMBED = {
     "Part": ["name", "description"],
     "Model": ["name", "url"],
-    "Video": ["video_title"],
-    "Symptom": ["symptom_name"],
+    "Video": ["name"],
+    "Symptom": ["name"],
     "Story": ["title", "content"],
     "QnA": ["question", "answer"],
     "RelatedPart": ["name"],

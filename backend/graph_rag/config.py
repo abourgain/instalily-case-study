@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig()
 
 EMBEDDINGS_MODEL = "text-embedding-3-small"
 

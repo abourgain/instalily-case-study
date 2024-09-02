@@ -134,11 +134,6 @@ class Agent:
         self.agent_executor = self._init_agent_executor()
 
     def _init_agent_executor(self) -> AgentExecutor:
-        # prompt = CustomPromptTemplate(
-        #     template=PROMPT_TEMPLATE,
-        #     tools=TOOLS,
-        #     input_variables=["input", "intermediate_steps"],
-        # )
         prompt = PromptTemplate(
             template=PROMPT_TEMPLATE,
         )

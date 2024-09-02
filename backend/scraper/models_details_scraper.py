@@ -86,7 +86,7 @@ class ModelsDetailsScraper(BaseScraper):
                 link_element = section.find_element(By.TAG_NAME, 'a')
                 section_name = link_element.find_element(By.TAG_NAME, 'span').text.strip()
                 section_link = link_element.get_attribute('href')
-                sections.append({'name': section_name, 'link': section_link})
+                sections.append({'name': section_name, 'url': section_link})
 
             return sections
 
@@ -110,7 +110,7 @@ class ModelsDetailsScraper(BaseScraper):
             for manual in manual_links:
                 manual_name = manual.find_element(By.CLASS_NAME, 'mega-m__manuals__title').text.strip()
                 manual_url = manual.get_attribute('href')
-                manuals.append({'name': manual_name, 'link': manual_url})
+                manuals.append({'name': manual_name, 'url': manual_url})
 
             return manuals
 
@@ -169,7 +169,7 @@ class ModelsDetailsScraper(BaseScraper):
                             {
                                 'name': part_name,
                                 'id': part_id,
-                                'link': part_link,
+                                'url': part_link,
                                 'price': part_price,
                                 'status': part_status,
                             }
@@ -229,7 +229,7 @@ class ModelsDetailsScraper(BaseScraper):
                             {
                                 'name': part_name,
                                 'id': part_id,
-                                'link': part_link,
+                                'url': part_link,
                                 'price': part_price,
                                 'status': part_status,
                             }
@@ -320,7 +320,7 @@ class ModelsDetailsScraper(BaseScraper):
         part_details = {
             'name': part_name,
             'id': part_id,
-            'link': part_link,
+            'url': part_link,
             'price': part_price,
             'fix_percent': fix_percent,
             'status': part_status,
@@ -352,7 +352,7 @@ class ModelsDetailsScraper(BaseScraper):
         return {
             'name': part_name,
             'id': part_id,
-            'link': part_link,
+            'url': part_link,
             'price': part_price,
             'fix_percent': fix_percent,
             'status': part_status,
@@ -406,13 +406,13 @@ class ModelsDetailsScraper(BaseScraper):
                 parts_details.append(part_details)
 
             return {
-                'symptom_name': symptom_name,
+                'name': symptom_name,
                 'fixing_parts': parts_details,
             }
 
         except (selenium.common.exceptions.NoSuchElementException, TimeoutException) as e:
             print(f"Error extracting parts for symptom '{symptom_name}': {e}")
-            return {'symptom_name': symptom_name, 'fixing_parts': []}
+            return {'name': symptom_name, 'fixing_parts': []}
 
     def _get_video_links(self, url: str):
         """Extracts video details across multiple pages, stopping when the correct number of videos is reached."""
@@ -480,14 +480,14 @@ class ModelsDetailsScraper(BaseScraper):
                             {
                                 'name': part_name,
                                 'id': part_id,
-                                'link': part_link,
+                                'url': part_link,
                                 'price': part_price,
                                 'status': part_status,
                             }
                         )
 
                     # Store the details for the video
-                    video_details.append({'youtube_link': youtube_link, 'video_title': video_title, 'parts': parts})
+                    video_details.append({'url': youtube_link, 'name': video_title, 'parts': parts})
 
             # Return on the model page
             self.driver.get(url)
@@ -557,7 +557,7 @@ class ModelsDetailsScraper(BaseScraper):
                             {
                                 'name': part_name,
                                 'id': part_id,
-                                'link': part_link,
+                                'url': part_link,
                             }
                         )
 
@@ -583,8 +583,8 @@ class ModelsDetailsScraper(BaseScraper):
                             'title': instruction_title,
                             'content': instruction_content,
                             'parts_used': parts,
-                            'difficulty_level': difficulty_level,
-                            'total_repair_time': total_repair_time,
+                            'difficulty': difficulty_level,
+                            'repair_time': total_repair_time,
                             'tools': tools,
                         }
                     )
