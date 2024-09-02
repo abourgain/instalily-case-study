@@ -8,6 +8,7 @@ import re
 from langchain.agents import Tool, AgentExecutor, AgentOutputParser, create_react_agent
 from langchain.prompts import StringPromptTemplate
 from langchain.schema import AgentAction, AgentFinish
+from langchain.memory import ConversationBufferMemory
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnableParallel
@@ -30,6 +31,9 @@ PROMPT_TEMPLATE = '''
 Your goal is to answer the user's question as accurately as possible using the tools at your disposal. You have access to these tools:
 
 {tools}
+
+Here is the conversation history so far:
+{chat_history}
 
 Use the following format:
 
@@ -81,11 +85,13 @@ User prompt:
 {agent_scratchpad}
 '''
 
-
 PARALLEL_PROMPT_TEMPLATE = '''
 Your goal is to answer the user's question as accurately as possible using the tools at your disposal. You have access to these tools:
 
 {tools}
+
+Here is the conversation history so far:
+{chat_history}
 
 Use the following format:
 
@@ -186,29 +192,34 @@ class Agent:
     """Agent class to handle the agent execution."""
 
     def __init__(self):
+        self.memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
         self.agent_executor = self._init_agent_executor()
 
     def _init_agent_executor(self) -> AgentExecutor:
-        prompt = PromptTemplate(
+        prompt = CustomPromptTemplate(
             template=PROMPT_TEMPLATE,
         )
         llm = ChatOpenAI(temperature=0, model="gpt-4")
         output_parser = CustomOutputParser()
 
-        agent = create_react_agent(
-            llm=llm,
-            tools=TOOLS,
-            prompt=prompt,
-            output_parser=output_parser,
-            stop_sequence=["\nObservation:"],
-        )
+        agent = create_react_agent(llm=llm, tools=TOOLS, prompt=prompt, output_parser=output_parser, stop_sequence=["\nObservation:"])
 
         agent_executor = AgentExecutor.from_agent_and_tools(agent=agent, tools=TOOLS, verbose=True)
         return agent_executor
 
     def invoke(self, user_input: str) -> str:
         """Invoke the agent with the user input."""
-        result = self.agent_executor.invoke({"input": user_input})
+        # Add the user input to the memory
+        self.memory.save_context({"input": user_input}, {})
+
+        # Prepare the input with memory for the agent
+        chat_history = self.memory.load_memory_variables({})["chat_history"]
+
+        # Prepare the input with the history for the agent
+        result = self.agent_executor.invoke({"input": user_input, "chat_history": chat_history})
+
+        # Save the agent's response in memory
+        self.memory.save_context({}, {"output": result["output"]})
 
         return result["output"]
 
@@ -244,11 +255,12 @@ class ParallelAgent:
     """Agent class to handle the agent execution."""
 
     def __init__(self):
+        self.memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
         self.agent_executor = self._init_agent_executor()
 
     def _init_agent_executor(self) -> AgentExecutor:
         prompt = PromptTemplate(
-            template=PROMPT_TEMPLATE,
+            template=PARALLEL_PROMPT_TEMPLATE,
         )
         llm = ChatOpenAI(temperature=0, model="gpt-4")
         output_parser = CustomOutputParser()
@@ -262,12 +274,21 @@ class ParallelAgent:
         )
 
         agent_executor = AgentExecutor.from_agent_and_tools(agent=agent, tools=PARALLEL_TOOLS, verbose=True)
-
         return agent_executor
 
     def invoke(self, user_input: str) -> str:
         """Invoke the agent with the user input."""
-        result = self.agent_executor.invoke({"input": user_input})
+        # Add the user input to the memory
+        self.memory.save_context({"input": user_input}, {})
+
+        # Prepare the input with memory for the agent
+        chat_history = self.memory.load_memory_variables({})["chat_history"]
+
+        # Prepare the input with the history for the agent
+        result = self.agent_executor.invoke({"input": user_input, "chat_history": chat_history})
+
+        # Save the agent's response in memory
+        self.memory.save_context({}, {"output": result["output"]})
 
         return result["output"]
 
