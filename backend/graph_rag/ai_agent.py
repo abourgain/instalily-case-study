@@ -1,5 +1,6 @@
 """AI Agent to handle user queries and provide answers using a set of tools."""
 
+import argparse
 import json
 from typing import Union
 import re
@@ -13,17 +14,18 @@ from langchain_core.prompts import PromptTemplate
 
 from backend.graph_rag.config import ENTITY_TYPES
 from backend.graph_rag.graph_query import query_db
+from backend.graph_rag.similarity_query import similarity_search
 
 
 TOOLS = [
     Tool(name="Query", func=query_db, description="Use this tool to find entities in the user prompt that can be used to generate queries"),
-    # Tool(name="Similarity Search", func=similarity_search, description="Use this tool to perform a similarity search in the database"),
+    Tool(name="Similarity Search", func=similarity_search, description="Use this tool to perform a similarity search in the database"),
 ]
 
 TOOL_NAMES = [f"{tool.name}: {tool.description}" for tool in TOOLS]
 
-PROMPT_TEMPLATE = '''Your goal is to answer the user's question as accurately as possible using the tools at your disposal.
-You have access to these tools:
+PROMPT_TEMPLATE = '''
+Your goal is to answer the user's question as accurately as possible using the tools at your disposal. You have access to these tools:
 
 {tools}
 
@@ -33,15 +35,17 @@ Question: the input prompt from the user
 Thought: you should always think about what to do
 Action: the action to take, should be one of [{tool_names}] (refer to the rules below)
 Action Input: the input to the action
-Observation: the result of the action (ainclude the raw tool output here)
+Observation: the result of the action (include the raw tool output here)
 ... (this Thought/Action/Action Input/Observation can repeat N times)
 Thought: I now know the final answer
 Final Answer: the final answer to the original input question
 
 Rules to follow:
 
-1. Always start by using the Query tool with the prompt as a parameter to retrieve relevant information from the database, such as part details, compatibility, installation instructions, or troubleshooting steps. If the tool returns a result, validate it by checking if the part number or information provided matches the user's query. If valid, use it to answer the question. If not, or if you found nothing, do not attempt to create an answer on your own.
-2. If the result is an empty array or does not fully answer the question, use the Similarity Search tool with the full initial user prompt. Again, validate the results against the query.
+1. Always start by using the Query tool with the prompt as a parameter to retrieve relevant information from the database, such as part details, compatibility, installation instructions, or troubleshooting steps. 
+   - If the Query tool returns a result that answers the user's question, validate the information and proceed to the final answer.
+   - If the result is ambiguous, incomplete, or not directly related to the user's query, proceed to step 2.
+2. If the Query tool does not provide a conclusive answer, use the Similarity Search tool with the full initial user prompt to find additional information. Validate the results against the query.
 3. If the tools return no results or if the raw tool output does not provide a definitive answer, do not attempt to create an answer on your own. Instead, clearly state "I do not know" or "I do not have this answer."
 4. If you still cannot find the answer, ask the user for more context or clarification, such as specific part numbers, model numbers, or the exact issue they are facing.
 5. After gathering more context, repeat Step 1 and Step 2 as needed. If you found results, stop here.
@@ -160,9 +164,12 @@ class Agent:
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Embed entities in the Neo4j graph")
+    parser.add_argument("--message", type=str, help="The message to send to the agent")
+    args = parser.parse_args()
     # USER_INPUT = "How can I install part number PS11752778?"
     # USER_INPUT = "How can I install part number PS2?"
-    USER_INPUT = "What parts compose the FPHD2491KF0 model number?"
+    # USER_INPUT = "What parts compose the FPHD2491KF0 model number?"
 
     agent_exe = Agent()
-    print(f"\n\n--->Result: \n{agent_exe.invoke(USER_INPUT)}\n\n")
+    print(f"\n\n--->Result: \n{agent_exe.invoke(args.message)}\n\n")
