@@ -95,7 +95,7 @@ def similarity_search(prompt: str, threshold: float = 0.9):
             query = f'''
                 MATCH (e:{entity_label})
                 RETURN e
-                LIMIT 5
+                LIMIT 10
             '''
             while True:
                 try:  # Attempt to query the graph
@@ -133,7 +133,7 @@ def similarity_search(prompt: str, threshold: float = 0.9):
             WITH e, dot_product / (sqrt(input_norm) * sqrt(embedding_norm)) AS cosine_similarity
             WHERE cosine_similarity > $threshold
             RETURN e
-            LIMIT 5
+            LIMIT 10
             '''
 
             while True:
