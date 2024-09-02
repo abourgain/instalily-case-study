@@ -1,3 +1,5 @@
+"""Prompts for the GraphRAG model."""
+
 SEQUENTIAL_PROMPT_TEMPLATE = '''
 Your goal is to answer the user's question as accurately as possible. You have access to these tools:
 
