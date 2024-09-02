@@ -1,7 +1,11 @@
 export const getAIMessage = async (userQuery) => {
   try {
+    const sessionId = sessionStorage.getItem("sessionId") || ""; // Retrieve session ID from sessionStorage
+
     const response = await fetch(
-      `http://localhost:8000/agent?message=${encodeURIComponent(userQuery)}`,
+      `http://localhost:8000/agent?message=${encodeURIComponent(
+        userQuery
+      )}&session=${encodeURIComponent(sessionId)}`,
       {
         method: "GET",
         headers: {

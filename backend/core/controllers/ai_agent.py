@@ -1,9 +1,13 @@
 """Controller for the AI agent."""
 
-from backend.graph_rag.ai_agent import Agent
+from langchain.memory import ConversationBufferMemory
+
+from backend.graph_rag.ai_agent import MemoryParallelAgent
 
 
-agent_executor = Agent()
+# Initialize the agent and memory
+memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+agent_executor = MemoryParallelAgent(memory=memory)  # Pass the memory to the agent
 
 
 def ask_agent(message: str) -> dict:
