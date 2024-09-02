@@ -3,6 +3,7 @@
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 
 from backend.core.routers import router
 
@@ -17,6 +18,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add session middleware
+app.add_middleware(SessionMiddleware, secret_key="your-secret-key")
 
 
 @app.get("/")

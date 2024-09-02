@@ -1,3 +1,4 @@
+// chatwindows.js
 import React, { useState, useEffect, useRef } from "react";
 import "./ChatWindow.css";
 import { getAIMessage } from "../api/api";
@@ -16,6 +17,14 @@ function ChatWindow() {
   const [loading, setLoading] = useState(false); // Add a loading state
 
   const messagesEndRef = useRef(null);
+
+  // Generate session ID if it doesn't exist
+  useEffect(() => {
+    if (!sessionStorage.getItem("sessionId")) {
+      const sessionId = `session-${Math.random().toString(36).substr(2, 9)}`;
+      sessionStorage.setItem("sessionId", sessionId); // Store session ID in sessionStorage
+    }
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
